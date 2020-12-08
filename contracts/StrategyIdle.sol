@@ -34,7 +34,6 @@ contract StrategyIdle is BaseStrategy {
     address immutable public idleController;
     address immutable public idleReservoir;
     address immutable public idleYieldToken;
-    address immutable public underlying;
     address immutable public referral;
 
     address[] public uniswapCompPath;
@@ -60,7 +59,6 @@ contract StrategyIdle is BaseStrategy {
         address _idleController,
         address _idleReservoir,
         address _idleYieldToken,
-        address _underlying,
         address _referral,
         address _uniswapRouterV2
     ) public BaseStrategy(_vault) {
@@ -70,12 +68,11 @@ contract StrategyIdle is BaseStrategy {
         idleController = _idleController;
         idleReservoir = _idleReservoir;
         idleYieldToken = _idleYieldToken;
-        underlying = _underlying;
         referral = _referral;
 
         uniswapRouterV2 = _uniswapRouterV2;
-        uniswapCompPath = [_comp, _weth, _idle];
-        uniswapIdlePath = [_idle, _weth, _underlying];
+        uniswapCompPath = [_comp, _weth, address(want)];
+        uniswapIdlePath = [_idle, _weth, address(want)];
 
         checkVirtualPrice = true;
         lastVirtualPrice = IIdleTokenV3_1(_idleYieldToken).tokenPrice();
