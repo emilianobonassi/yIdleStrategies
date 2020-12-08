@@ -37,4 +37,8 @@ contract StrategyIdleUSDC_BY is StrategyIdle {
   )
   public {
   }
+
+  function name() external override pure returns (string memory) {
+      return "StrategyIdleUSDC_BY";
+  }
 }

@@ -78,7 +78,7 @@ contract StrategyIdle is BaseStrategy {
 
     // ******** OVERRIDE THESE METHODS FROM BASE CONTRACT ************
 
-    function name() external override pure returns (string memory) {
+    function name() external override virtual pure returns (string memory) {
         return "StrategyIdle";
     }
 
