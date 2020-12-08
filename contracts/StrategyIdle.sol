@@ -30,6 +30,7 @@ contract StrategyIdle is BaseStrategy {
     address immutable public uniswapRouterV2;
     address immutable public comp;
     address immutable public idle;
+    address immutable public weth;
     address immutable public comptroller;
     address immutable public idleController;
     address immutable public idleReservoir;
@@ -64,6 +65,7 @@ contract StrategyIdle is BaseStrategy {
     ) public BaseStrategy(_vault) {
         comp = _comp;
         idle = _idle;
+        weth = _weth;
         comptroller = _comptroller;
         idleController = _idleController;
         idleReservoir = _idleReservoir;
@@ -219,6 +221,10 @@ contract StrategyIdle is BaseStrategy {
 
     // NOTE: Can override `tendTrigger` and `harvestTrigger` if necessary
 
+    function harvestTrigger(uint256 callCost) public view override returns (bool) {
+        return super.harvestTrigger(ethToWant(callCost));
+    }
+
     function prepareMigration(address _newStrategy) internal override {
         // TODO: Transfer any non-`want` tokens to the new strategy
         // NOTE: `migrate` will automatically forward all `want` in this strategy to the new one
@@ -256,6 +262,19 @@ contract StrategyIdle is BaseStrategy {
 
     function balanceOfWant() public view returns (uint256) {
         return IERC20(want).balanceOf(address(this));
+    }
+
+    function ethToWant(uint256 _amount) public view returns (uint256) {
+        if (_amount == 0) {
+            return 0;
+        }
+
+        address[] memory path = new address[](2);
+        path[0] = address(weth);
+        path[1] = address(want);
+        uint256[] memory amounts = IUniswapRouter(uniswapRouterV2).getAmountsOut(_amount, path);
+
+        return amounts[amounts.length - 1];
     }
 
     function _liquidateComp() internal {
