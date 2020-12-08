@@ -187,8 +187,14 @@ contract StrategyIdle is BaseStrategy {
         override
         returns (uint256 _profit, uint256 _loss, uint256 _debtPayment)
     {
-        //TODO: avoid any check of emergency exit (e.g. virtual price)
-        return prepareReturn(_debtOutstanding);
+        if(checkVirtualPrice) {
+            // Temporarily suspend virtual price check
+            checkVirtualPrice = false;
+            (_profit, _loss, _debtPayment) = prepareReturn(_debtOutstanding);
+            checkVirtualPrice = true;
+        } else {
+            return prepareReturn(_debtOutstanding);
+        }
     }
 
     /*
