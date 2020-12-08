@@ -18,6 +18,7 @@ import "@openzeppelinV3/contracts/token/ERC20/SafeERC20.sol";
 
 import "../interfaces/Idle/IIdleTokenV3_1.sol";
 import "../interfaces/Idle/IdleController.sol";
+import "../interfaces/Idle/IdleReservoir.sol";
 import "../interfaces/Compound/Comptroller.sol";
 import "../interfaces/Uniswap/IUniswapRouter.sol";
 
@@ -31,6 +32,7 @@ contract StrategyIdle is BaseStrategy {
     address immutable public idle;
     address immutable public comptroller;
     address immutable public idleController;
+    address immutable public idleReservoir;
     address immutable public idleYieldToken;
     address immutable public underlying;
     address immutable public referral;
@@ -45,6 +47,7 @@ contract StrategyIdle is BaseStrategy {
         address _weth,
         address _comptroller,
         address _idleController,
+        address _idleReservoir,
         address _idleYieldToken,
         address _underlying,
         address _referral,
@@ -54,6 +57,7 @@ contract StrategyIdle is BaseStrategy {
         idle = _idle;
         comptroller = _comptroller;
         idleController = _idleController;
+        idleReservoir = _idleReservoir;
         idleYieldToken = _idleYieldToken;
         underlying = _underlying;
         referral = _referral;
@@ -99,6 +103,9 @@ contract StrategyIdle is BaseStrategy {
             uint256 _debtPayment
         )
     {
+        // Assure IdleController has IDLE tokens
+        IdleReservoir(idleReservoir).drip();
+
         // Try to pay debt asap
         if (_debtOutstanding > 0) {
             uint256 _amountFreed = liquidatePosition(_debtOutstanding);
