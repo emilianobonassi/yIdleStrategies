@@ -17,9 +17,7 @@ import "@openzeppelinV3/contracts/utils/Address.sol";
 import "@openzeppelinV3/contracts/token/ERC20/SafeERC20.sol";
 
 import "../interfaces/Idle/IIdleTokenV3_1.sol";
-import "../interfaces/Idle/IdleController.sol";
 import "../interfaces/Idle/IdleReservoir.sol";
-import "../interfaces/Compound/Comptroller.sol";
 import "../interfaces/Uniswap/IUniswapRouter.sol";
 
 contract StrategyIdle is BaseStrategy {
@@ -31,8 +29,6 @@ contract StrategyIdle is BaseStrategy {
     address immutable public comp;
     address immutable public idle;
     address immutable public weth;
-    address immutable public comptroller;
-    address immutable public idleController;
     address immutable public idleReservoir;
     address immutable public idleYieldToken;
     address immutable public referral;
@@ -56,8 +52,6 @@ contract StrategyIdle is BaseStrategy {
         address _comp,
         address _idle,
         address _weth,
-        address _comptroller,
-        address _idleController,
         address _idleReservoir,
         address _idleYieldToken,
         address _referral,
@@ -66,8 +60,6 @@ contract StrategyIdle is BaseStrategy {
         comp = _comp;
         idle = _idle;
         weth = _weth;
-        comptroller = _comptroller;
-        idleController = _idleController;
         idleReservoir = _idleReservoir;
         idleYieldToken = _idleYieldToken;
         referral = _referral;
@@ -130,13 +122,9 @@ contract StrategyIdle is BaseStrategy {
             _debtPayment = Math.min(_amountFreed, _debtOutstanding);
         }
 
-        //TODO: is it worth the optimization?
-        if (
-            IdleController(idleController).idleAccrued(address(idleYieldToken)) > 0 || 
-            Comptroller(comptroller).compAccrued(address(idleYieldToken)) > 0
-        ) {
-            IIdleTokenV3_1(idleYieldToken).redeemIdleToken(0);
-        }
+        // Claim always is cheaper. In the worst case we already claimed in the prev step
+        // and the gas cost will be higher
+        IIdleTokenV3_1(idleYieldToken).redeemIdleToken(0);
 
         // If we have IDLE or COMP, let's convert them!
         // This is done in a separate step since there might have been
