@@ -40,6 +40,17 @@ contract StrategyIdle is BaseStrategy {
     address[] public uniswapCompPath;
     address[] public uniswapIdlePath;
 
+    bool public checkVirtualPrice;
+    uint256 public lastVirtualPrice;
+
+    modifier updateVirtualPrice() {
+        if (checkVirtualPrice) {
+            require(lastVirtualPrice <= IIdleTokenV3_1(idleYieldToken).tokenPrice(), "Virtual price is increasing from the last time, potential losses");
+        }
+        _;
+        lastVirtualPrice = IIdleTokenV3_1(idleYieldToken).tokenPrice();
+    }
+
     constructor(
         address _vault,
         address _comp,
@@ -65,6 +76,13 @@ contract StrategyIdle is BaseStrategy {
         uniswapRouterV2 = _uniswapRouterV2;
         uniswapCompPath = [_comp, _weth, _idle];
         uniswapIdlePath = [_idle, _weth, _underlying];
+
+        checkVirtualPrice = true;
+        lastVirtualPrice = IIdleTokenV3_1(_idleYieldToken).tokenPrice();
+    }
+
+    function setCheckVirtualPrice(bool _checkVirtualPrice) public onlyGovernance {
+        checkVirtualPrice = _checkVirtualPrice;
     }
 
     // ******** OVERRIDE THESE METHODS FROM BASE CONTRACT ************
@@ -141,7 +159,7 @@ contract StrategyIdle is BaseStrategy {
      * was made is available for reinvestment. Also note that this number could
      * be 0, and you should handle that scenario accordingly.
      */
-    function adjustPosition(uint256 _debtOutstanding) internal override {
+    function adjustPosition(uint256 _debtOutstanding) internal override updateVirtualPrice {
         // TODO: Do something to invest excess `want` tokens (from the Vault) into your positions
         // NOTE: Try to adjust positions so that `_debtOutstanding` can be freed up on *next* harvest (not immediately)
 
@@ -180,13 +198,13 @@ contract StrategyIdle is BaseStrategy {
     function liquidatePosition(uint256 _amountNeeded)
         internal
         override
+        updateVirtualPrice
         returns (uint256 _amountFreed)
     {
         // TODO: Do stuff here to free up to `_amountNeeded` from all positions back into `want`
         // NOTE: Return `_amountFreed`, which should be `<= _amountNeeded`
 
         if (balanceOfWant() < _amountNeeded) {
-            //TODO: check virtual price not decreasing
             uint256 currentVirtualPrice = IIdleTokenV3_1(idleYieldToken).tokenPrice();
             uint256 valueToRedeem = (_amountNeeded.sub(balanceOfWant())).mul(1e18).div(currentVirtualPrice);
 
@@ -230,7 +248,6 @@ contract StrategyIdle is BaseStrategy {
 
     function balanceOnIdle() public view returns (uint256) {
         uint256 currentVirtualPrice = IIdleTokenV3_1(idleYieldToken).tokenPrice();
-        //TODO: check virtual price not decreasing
         return IERC20(idleYieldToken).balanceOf(address(this)).mul(currentVirtualPrice).div(1e18);
     }
 
