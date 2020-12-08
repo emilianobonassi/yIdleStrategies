@@ -245,12 +245,11 @@ contract StrategyIdle is BaseStrategy {
         view
         returns (address[] memory)
     {
-        address[] memory protected = new address[](4);
+        address[] memory protected = new address[](3);
 
-        protected[0] = address(want); // TODO: should be default included?
-        protected[1] = idleYieldToken;
-        protected[2] = idle;
-        protected[3] = comp;
+        protected[0] = idleYieldToken;
+        protected[1] = idle;
+        protected[2] = comp;
 
         return protected;
     }
