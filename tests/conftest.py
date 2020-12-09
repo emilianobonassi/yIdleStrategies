@@ -23,9 +23,21 @@ def guardian(accounts):
     yield accounts[2]
 
 @pytest.fixture
-def vault(pm, gov, rewards, guardian):
+def token(Token):
+    yield Token.at("0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48")
+
+@pytest.fixture
+def tokenWhale(accounts, Contract, token):
+    a = accounts[5]
+    binance = accounts.at("0xf977814e90da44bfa03b6295a0616a897441acec", force=True)
+    bal = 1e6 * 1e6
+    token.transfer(a, bal, {"from": binance})
+    yield a
+
+@pytest.fixture
+def vault(pm, gov, rewards, guardian, token):
     Vault = pm(config["dependencies"][0]).Vault
-    vault = guardian.deploy(Vault, '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', gov, rewards, "", "")
+    vault = guardian.deploy(Vault, token, gov, rewards, "", "")
     yield vault
 
 
