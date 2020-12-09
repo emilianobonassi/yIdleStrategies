@@ -157,6 +157,8 @@ contract StrategyIdle is BaseStrategy {
 
         uint256 _wantAvailable = balanceOfWant().sub(_debtOutstanding);
         if (_wantAvailable > 0) {
+            want.safeApprove(idleYieldToken, 0);
+            want.safeApprove(idleYieldToken, _wantAvailable);
             IIdleTokenV3_1(idleYieldToken).mintIdleToken(_wantAvailable, true, referral);
         }
     }
@@ -199,7 +201,13 @@ contract StrategyIdle is BaseStrategy {
 
         if (balanceOfWant() < _amountNeeded) {
             uint256 currentVirtualPrice = IIdleTokenV3_1(idleYieldToken).tokenPrice();
-            uint256 valueToRedeem = (_amountNeeded.sub(balanceOfWant())).mul(1e18).div(currentVirtualPrice);
+
+            // Note: potential drift by 1 wei, reduce to max balance in the case approx is rounded up
+            uint256 valueToRedeemApprox = (_amountNeeded.sub(balanceOfWant())).mul(1e18).div(currentVirtualPrice) + 1;
+            uint256 valueToRedeem = Math.min(
+                valueToRedeemApprox,
+                IERC20(idleYieldToken).balanceOf(address(this))
+            );
 
             IIdleTokenV3_1(idleYieldToken).redeemIdleToken(valueToRedeem);
         }
