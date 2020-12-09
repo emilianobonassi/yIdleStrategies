@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: AGPL-3.0
 pragma solidity 0.6.12;
 
 import "@openzeppelinV3/contracts/token/ERC20/ERC20.sol";
