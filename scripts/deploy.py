@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from brownie import Strategy, accounts, config, network, project, web3
+from brownie import StrategyIdleUSDC_BY, accounts, config, network, project, web3
 from eth_utils import is_checksum_address
 
 
@@ -47,4 +47,4 @@ def main():
     if input("Deploy Strategy? y/[N]: ").lower() != "y":
         return
 
-    strategy = Strategy.deploy(vault, {"from": dev})
+    strategy = StrategyIdleUSDC_BY.deploy(vault, {"from": dev})
