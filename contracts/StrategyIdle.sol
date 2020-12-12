@@ -200,10 +200,8 @@ contract StrategyIdle is BaseStrategy {
         // NOTE: Return `_amountFreed`, which should be `<= _amountNeeded`
 
         if (balanceOfWant() < _amountNeeded) {
-            uint256 currentVirtualPrice = IIdleTokenV3_1(idleYieldToken).tokenPrice();
-
             // Note: potential drift by 1 wei, reduce to max balance in the case approx is rounded up
-            uint256 valueToRedeemApprox = (_amountNeeded.sub(balanceOfWant())).mul(1e18).div(currentVirtualPrice) + 1;
+            uint256 valueToRedeemApprox = (_amountNeeded.sub(balanceOfWant())).mul(1e18).div(lastVirtualPrice) + 1;
             uint256 valueToRedeem = Math.min(
                 valueToRedeemApprox,
                 IERC20(idleYieldToken).balanceOf(address(this))
