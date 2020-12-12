@@ -244,10 +244,8 @@ contract StrategyIdle is BaseStrategy {
         // TODO: Transfer any non-`want` tokens to the new strategy
         // NOTE: `migrate` will automatically forward all `want` in this strategy to the new one
 
-        uint256 balance = IERC20(idleYieldToken).balanceOf(address(this));
-
-        // this automatically claims the COMP and IDLE gov tokens
-        IIdleTokenV3_1(idleYieldToken).redeemIdleToken(balance);
+        // this automatically claims the COMP and IDLE gov tokens in addition to want
+        IIdleTokenV3_1(idleYieldToken).redeemIdleToken(IERC20(idleYieldToken).balanceOf(address(this)));
 
         // Transfer COMP and IDLE to new strategy
         IERC20(comp).transfer(_newStrategy, IERC20(comp).balanceOf(address(this)));
