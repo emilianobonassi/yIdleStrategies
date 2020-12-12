@@ -219,8 +219,16 @@ contract StrategyIdle is BaseStrategy {
                 IERC20(idleYieldToken).balanceOf(address(this))
             );
 
+            uint256 preBalanceOfWant = balanceOfWant();
             alreadyRedeemed = true;
             IIdleTokenV3_1(idleYieldToken).redeemIdleToken(valueToRedeem);
+            uint256 postBalanceOfWant = balanceOfWant();
+
+            // Note: could be equal, prefer >= in case of rounding
+            // We just need that is at least the _amountNeeded, not below
+            require(
+                (postBalanceOfWant-preBalanceOfWant) >= _amountNeeded,
+                'Redeemed amount must be >= _amountNeeded');
         }
 
         _amountFreed = balanceOfWant();
