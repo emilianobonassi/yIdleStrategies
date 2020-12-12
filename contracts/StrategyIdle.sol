@@ -236,7 +236,7 @@ contract StrategyIdle is BaseStrategy {
                 // Note: could be equal, prefer >= in case of rounding
                 // We just need that is at least the _amountNeeded, not below
                 require(
-                    (postBalanceOfWant-preBalanceOfWant) >= _amountNeeded,
+                    (postBalanceOfWant.sub(preBalanceOfWant)) >= _amountNeeded,
                     'Redeemed amount must be >= _amountNeeded');
             } else {
                 IIdleTokenV3_1(idleYieldToken).redeemIdleToken(valueToRedeem);
