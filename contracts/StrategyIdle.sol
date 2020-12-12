@@ -88,6 +88,16 @@ contract StrategyIdle is BaseStrategy {
         checkRedeemedAmount = _checkRedeemedAmount;
     }
 
+    function enableAllChecks() public onlyGovernance {
+        checkVirtualPrice = true;
+        checkRedeemedAmount = true;
+    }
+
+    function disableAllChecks() public onlyGovernance {
+        checkVirtualPrice = false;
+        checkRedeemedAmount = false;
+    }
+
     // ******** OVERRIDE THESE METHODS FROM BASE CONTRACT ************
 
     function name() external override virtual pure returns (string memory) {
