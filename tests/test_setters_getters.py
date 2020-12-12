@@ -6,6 +6,8 @@ from brownie import config
 
 def test_constructor(vault, gov, strategy, strategist):
     assert strategy.name() == "StrategyIdleUSDC_BY"
+    assert strategy.govTokens(0) == strategy.__comp()
+    assert strategy.govTokens(1) == strategy.__idle()
 
 def test_incorrect_vault(pm, guardian, gov, strategist, rewards, StrategyIdleUSDC_BY, Token):
     token = guardian.deploy(Token)
