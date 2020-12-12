@@ -247,7 +247,8 @@ contract StrategyIdle is BaseStrategy {
             }
         }
 
-        _amountFreed = balanceOfWant();
+        // Min, otw vault accounting breaks
+        _amountFreed = Math.min(balanceOfWant(), _amountNeeded);
     }
 
     // NOTE: Can override `tendTrigger` and `harvestTrigger` if necessary
