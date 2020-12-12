@@ -39,6 +39,8 @@ contract StrategyIdle is BaseStrategy {
     bool public checkVirtualPrice;
     uint256 public lastVirtualPrice;
 
+    bool public checkRedeemedAmount;
+
     bool public alreadyRedeemed;
 
     modifier updateVirtualPrice() {
@@ -74,10 +76,16 @@ contract StrategyIdle is BaseStrategy {
         lastVirtualPrice = IIdleTokenV3_1(_idleYieldToken).tokenPrice();
 
         alreadyRedeemed = false;
+
+        checkRedeemedAmount = true;
     }
 
     function setCheckVirtualPrice(bool _checkVirtualPrice) public onlyGovernance {
         checkVirtualPrice = _checkVirtualPrice;
+    }
+
+    function setCheckRedeemedAmount(bool _checkRedeemedAmount) public onlyGovernance {
+        checkRedeemedAmount = _checkRedeemedAmount;
     }
 
     // ******** OVERRIDE THESE METHODS FROM BASE CONTRACT ************
@@ -219,16 +227,20 @@ contract StrategyIdle is BaseStrategy {
                 IERC20(idleYieldToken).balanceOf(address(this))
             );
 
-            uint256 preBalanceOfWant = balanceOfWant();
             alreadyRedeemed = true;
-            IIdleTokenV3_1(idleYieldToken).redeemIdleToken(valueToRedeem);
-            uint256 postBalanceOfWant = balanceOfWant();
+            if (checkRedeemedAmount) {
+                uint256 preBalanceOfWant = balanceOfWant();
+                IIdleTokenV3_1(idleYieldToken).redeemIdleToken(valueToRedeem);
+                uint256 postBalanceOfWant = balanceOfWant();
 
-            // Note: could be equal, prefer >= in case of rounding
-            // We just need that is at least the _amountNeeded, not below
-            require(
-                (postBalanceOfWant-preBalanceOfWant) >= _amountNeeded,
-                'Redeemed amount must be >= _amountNeeded');
+                // Note: could be equal, prefer >= in case of rounding
+                // We just need that is at least the _amountNeeded, not below
+                require(
+                    (postBalanceOfWant-preBalanceOfWant) >= _amountNeeded,
+                    'Redeemed amount must be >= _amountNeeded');
+            } else {
+                IIdleTokenV3_1(idleYieldToken).redeemIdleToken(valueToRedeem);
+            }
         }
 
         _amountFreed = balanceOfWant();
