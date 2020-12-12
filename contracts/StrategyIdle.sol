@@ -26,15 +26,10 @@ contract StrategyIdle is BaseStrategy {
     using SafeMath for uint256;
 
     address immutable public uniswapRouterV2;
-    address immutable public comp;
-    address immutable public idle;
     address immutable public weth;
     address immutable public idleReservoir;
     address immutable public idleYieldToken;
     address immutable public referral;
-
-    address[] public uniswapCompPath;
-    address[] public uniswapIdlePath;
 
     bool public checkVirtualPrice;
     uint256 public lastVirtualPrice;
@@ -42,6 +37,8 @@ contract StrategyIdle is BaseStrategy {
     bool public checkRedeemedAmount;
 
     bool public alreadyRedeemed;
+
+    address[] public govTokens;
 
     modifier updateVirtualPrice() {
         if (checkVirtualPrice) {
@@ -53,24 +50,20 @@ contract StrategyIdle is BaseStrategy {
 
     constructor(
         address _vault,
-        address _comp,
-        address _idle,
+        address[] memory _govTokens,
         address _weth,
         address _idleReservoir,
         address _idleYieldToken,
         address _referral,
         address _uniswapRouterV2
     ) public BaseStrategy(_vault) {
-        comp = _comp;
-        idle = _idle;
+        govTokens = _govTokens;
         weth = _weth;
         idleReservoir = _idleReservoir;
         idleYieldToken = _idleYieldToken;
         referral = _referral;
 
         uniswapRouterV2 = _uniswapRouterV2;
-        uniswapCompPath = [_comp, _weth, address(want)];
-        uniswapIdlePath = [_idle, _weth, address(want)];
 
         checkVirtualPrice = true;
         lastVirtualPrice = IIdleTokenV3_1(_idleYieldToken).tokenPrice();
@@ -98,6 +91,10 @@ contract StrategyIdle is BaseStrategy {
         checkRedeemedAmount = false;
     }
 
+    function setGovTokens(address[] memory _govTokens) public onlyGovernance {
+        _setGovTokens(_govTokens);
+    }
+
     // ******** OVERRIDE THESE METHODS FROM BASE CONTRACT ************
 
     function name() external override virtual pure returns (string memory) {
@@ -107,7 +104,7 @@ contract StrategyIdle is BaseStrategy {
     function estimatedTotalAssets() public override view returns (uint256) {
         // TODO: Build a more accurate estimate using the value of all positions in terms of `want`
         return want.balanceOf(address(this))
-                   .add(balanceOnIdle()) //TODO: estimate COMP+IDLE value
+                   .add(balanceOnIdle()) //TODO: estimate gov tokens value
         ;
     }
 
@@ -156,16 +153,13 @@ contract StrategyIdle is BaseStrategy {
             alreadyRedeemed = false;
         }
 
-        // If we have IDLE or COMP, let's convert them!
+        // If we have govTokens, let's convert them!
         // This is done in a separate step since there might have been
         // a migration or an exitPosition
         
-        // 1. COMP => IDLE via ETH
-        // 2. total IDLE => underlying via ETH 
         // This might be > 0 because of a strategy migration
         uint256 balanceOfWantBeforeSwap = balanceOfWant();
-        _liquidateComp();
-        _liquidateIdle();
+        _liquidateGovTokens();
         _profit = balanceOfWant().sub(balanceOfWantBeforeSwap);
     }
 
@@ -266,12 +260,14 @@ contract StrategyIdle is BaseStrategy {
         // TODO: Transfer any non-`want` tokens to the new strategy
         // NOTE: `migrate` will automatically forward all `want` in this strategy to the new one
 
-        // this automatically claims the COMP and IDLE gov tokens in addition to want
+        // this automatically claims the gov tokens in addition to want
         IIdleTokenV3_1(idleYieldToken).redeemIdleToken(IERC20(idleYieldToken).balanceOf(address(this)));
 
-        // Transfer COMP and IDLE to new strategy
-        IERC20(comp).transfer(_newStrategy, IERC20(comp).balanceOf(address(this)));
-        IERC20(idle).transfer(_newStrategy, IERC20(idle).balanceOf(address(this)));
+        // Transfer gov tokens to new strategy
+        for (uint256 i = 0; i < govTokens.length; i++) {
+            IERC20 govToken = IERC20(govTokens[i]);
+            govToken.transfer(_newStrategy, govToken.balanceOf(address(this)));
+        }
     }
 
     function protectedTokens()
@@ -280,11 +276,12 @@ contract StrategyIdle is BaseStrategy {
         view
         returns (address[] memory)
     {
-        address[] memory protected = new address[](3);
+        address[] memory protected = new address[](1+govTokens.length);
 
-        protected[0] = idleYieldToken;
-        protected[1] = idle;
-        protected[2] = comp;
+        for (uint256 i = 0; i < govTokens.length; i++) {
+            protected[i] = govTokens[i];
+        }
+        protected[govTokens.length] = idleYieldToken;
 
         return protected;
     }
@@ -311,26 +308,27 @@ contract StrategyIdle is BaseStrategy {
         return amounts[amounts.length - 1];
     }
 
-    function _liquidateComp() internal {
-        uint256 compBalance = IERC20(comp).balanceOf(address(this));
-        if (compBalance > 0) {
-            IERC20(comp).safeApprove(uniswapRouterV2, 0);
-            IERC20(comp).safeApprove(uniswapRouterV2, compBalance);
-            IUniswapRouter(uniswapRouterV2).swapExactTokensForTokens(
-                compBalance, 1, uniswapCompPath, address(this), now.add(1800)
-            );
+    function _liquidateGovTokens() internal {
+        for (uint256 i = 0; i < govTokens.length; i++) {
+            IERC20 govToken = IERC20(govTokens[i]);
+            uint256 balance = govToken.balanceOf(address(this));
+            if (balance > 0) {
+                govToken.safeApprove(uniswapRouterV2, 0);
+                govToken.safeApprove(uniswapRouterV2, balance);
+
+                address[] memory path = new address[](3);
+                path[0] = address(govToken);
+                path[1] = weth;
+                path[2] = address(want);
+
+                IUniswapRouter(uniswapRouterV2).swapExactTokensForTokens(
+                    balance, 1, path, address(this), now.add(1800)
+                );
+            }
         }
     }
 
-    function _liquidateIdle() internal {
-        uint256 idleBalance = IERC20(idle).balanceOf(address(this));
-        if (idleBalance > 0) {
-            IERC20(idle).safeApprove(uniswapRouterV2, 0);
-            IERC20(idle).safeApprove(uniswapRouterV2, idleBalance);
-
-            IUniswapRouter(uniswapRouterV2).swapExactTokensForTokens(
-                idleBalance, 1, uniswapIdlePath, address(this), now.add(1800)
-            );
-        }
+    function _setGovTokens(address[] memory _govTokens) internal {
+        govTokens = _govTokens;
     }
 }

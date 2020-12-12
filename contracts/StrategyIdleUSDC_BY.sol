@@ -22,14 +22,12 @@ contract StrategyIdleUSDC_BY is StrategyIdle {
   address constant public __referral = address(0x652c1c23780d1A015938dD58b4a65a5F9eFBA653);
   address constant public __uniswapRouterV2 = address(0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D);
 
-
   constructor(
     address _vault
   )
   StrategyIdle(
         _vault,
-        __comp,
-        __idle,
+        new address[](0),
         __weth,
         __idleReservoir,
         __idleYieldToken,
@@ -38,6 +36,12 @@ contract StrategyIdleUSDC_BY is StrategyIdle {
   )
   public {
     require(address(want) == __usdc, "Vault want is not USDC");
+
+    address[] memory _govTokens = new address[](2);
+    _govTokens[0] = __comp;
+    _govTokens[1] = __idle;
+
+    _setGovTokens(_govTokens);
   }
 
   function name() external override pure returns (string memory) {
