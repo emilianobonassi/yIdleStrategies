@@ -39,6 +39,8 @@ contract StrategyIdle is BaseStrategy {
     bool public checkVirtualPrice;
     uint256 public lastVirtualPrice;
 
+    bool public alreadyRedeemed;
+
     modifier updateVirtualPrice() {
         if (checkVirtualPrice) {
             require(lastVirtualPrice <= IIdleTokenV3_1(idleYieldToken).tokenPrice(), "Virtual price is increasing from the last time, potential losses");
@@ -70,6 +72,8 @@ contract StrategyIdle is BaseStrategy {
 
         checkVirtualPrice = true;
         lastVirtualPrice = IIdleTokenV3_1(_idleYieldToken).tokenPrice();
+
+        alreadyRedeemed = false;
     }
 
     function setCheckVirtualPrice(bool _checkVirtualPrice) public onlyGovernance {
@@ -112,6 +116,11 @@ contract StrategyIdle is BaseStrategy {
             uint256 _debtPayment
         )
     {
+        // Reset, it could have been set during a withdrawal
+        if(alreadyRedeemed) {
+            alreadyRedeemed = false;
+        }
+
         // Assure IdleController has IDLE tokens
         IdleReservoir(idleReservoir).drip();
 
@@ -122,9 +131,12 @@ contract StrategyIdle is BaseStrategy {
             _debtPayment = Math.min(_amountFreed, _debtOutstanding);
         }
 
-        // Claim always is cheaper. In the worst case we already claimed in the prev step
-        // and the gas cost will be higher
-        IIdleTokenV3_1(idleYieldToken).redeemIdleToken(0);
+        // Claim only if not done in the previous liquidate step during redeem
+        if (!alreadyRedeemed) {
+            IIdleTokenV3_1(idleYieldToken).redeemIdleToken(0);
+        } else {
+            alreadyRedeemed = false;
+        }
 
         // If we have IDLE or COMP, let's convert them!
         // This is done in a separate step since there might have been
@@ -207,6 +219,7 @@ contract StrategyIdle is BaseStrategy {
                 IERC20(idleYieldToken).balanceOf(address(this))
             );
 
+            alreadyRedeemed = true;
             IIdleTokenV3_1(idleYieldToken).redeemIdleToken(valueToRedeem);
         }
 
