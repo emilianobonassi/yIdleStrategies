@@ -276,7 +276,7 @@ contract StrategyIdle is BaseStrategy {
             IERC20(comp).safeApprove(uniswapRouterV2, 0);
             IERC20(comp).safeApprove(uniswapRouterV2, compBalance);
             IUniswapRouter(uniswapRouterV2).swapExactTokensForTokens(
-                compBalance, 1, uniswapCompPath, address(this), block.timestamp
+                compBalance, 1, uniswapCompPath, address(this), now.add(1800)
             );
         }
     }
@@ -288,7 +288,7 @@ contract StrategyIdle is BaseStrategy {
             IERC20(idle).safeApprove(uniswapRouterV2, idleBalance);
 
             IUniswapRouter(uniswapRouterV2).swapExactTokensForTokens(
-                idleBalance, 1, uniswapIdlePath, address(this), block.timestamp
+                idleBalance, 1, uniswapIdlePath, address(this), now.add(1800)
             );
         }
     }
