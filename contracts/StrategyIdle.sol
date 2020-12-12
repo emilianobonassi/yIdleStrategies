@@ -73,25 +73,25 @@ contract StrategyIdle is BaseStrategy {
         checkRedeemedAmount = true;
     }
 
-    function setCheckVirtualPrice(bool _checkVirtualPrice) public onlyGovernance {
+    function setCheckVirtualPrice(bool _checkVirtualPrice) external onlyGovernance {
         checkVirtualPrice = _checkVirtualPrice;
     }
 
-    function setCheckRedeemedAmount(bool _checkRedeemedAmount) public onlyGovernance {
+    function setCheckRedeemedAmount(bool _checkRedeemedAmount) external onlyGovernance {
         checkRedeemedAmount = _checkRedeemedAmount;
     }
 
-    function enableAllChecks() public onlyGovernance {
+    function enableAllChecks() external onlyGovernance {
         checkVirtualPrice = true;
         checkRedeemedAmount = true;
     }
 
-    function disableAllChecks() public onlyGovernance {
+    function disableAllChecks() external onlyGovernance {
         checkVirtualPrice = false;
         checkRedeemedAmount = false;
     }
 
-    function setGovTokens(address[] memory _govTokens) public onlyGovernance {
+    function setGovTokens(address[] memory _govTokens) external onlyGovernance {
         _setGovTokens(_govTokens);
     }
 
