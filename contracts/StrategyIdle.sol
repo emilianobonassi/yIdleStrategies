@@ -179,8 +179,10 @@ contract StrategyIdle is BaseStrategy {
             return;
         }
 
-        uint256 _wantAvailable = balanceOfWant().sub(_debtOutstanding);
-        if (_wantAvailable > 0) {
+        uint256 balanceOfWant = balanceOfWant();
+        if (balanceOfWant > _debtOutstanding) {
+            uint256 _wantAvailable = balanceOfWant.sub(_debtOutstanding);
+
             want.safeApprove(idleYieldToken, 0);
             want.safeApprove(idleYieldToken, _wantAvailable);
             IIdleTokenV3_1(idleYieldToken).mintIdleToken(_wantAvailable, true, referral);
