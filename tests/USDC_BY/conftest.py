@@ -2,11 +2,6 @@ import pytest
 from brownie import config
 
 @pytest.fixture
-def andre(accounts):
-    # Andre, giver of tokens, and maker of yield
-    yield accounts[0]
-
-@pytest.fixture
 def gov(accounts):
     # yearn multis... I mean YFI governance. I swear!
     yield accounts[1]
