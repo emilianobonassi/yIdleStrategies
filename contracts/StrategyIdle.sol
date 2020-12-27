@@ -25,6 +25,8 @@ contract StrategyIdle is BaseStrategy {
     using Address for address;
     using SafeMath for uint256;
 
+    uint256 constant public FULL_ALLOC = 100000;
+
     address immutable public uniswapRouterV2;
     address immutable public weth;
     address immutable public idleReservoir;
@@ -41,11 +43,12 @@ contract StrategyIdle is BaseStrategy {
     address[] public govTokens;
 
     modifier updateVirtualPrice() {
+        uint256 currentTokenPrice = _getTokenPrice();
         if (checkVirtualPrice) {
-            require(lastVirtualPrice <= IIdleTokenV3_1(idleYieldToken).tokenPrice(), "Virtual price is increasing from the last time, potential losses");
+            require(lastVirtualPrice <= currentTokenPrice, "Virtual price is decreasing from the last time, potential losses");
         }
+        lastVirtualPrice = currentTokenPrice;
         _;
-        lastVirtualPrice = IIdleTokenV3_1(idleYieldToken).tokenPrice();
     }
 
     constructor(
@@ -290,8 +293,7 @@ contract StrategyIdle is BaseStrategy {
     }
 
     function balanceOnIdle() public view returns (uint256) {
-        uint256 currentVirtualPrice = IIdleTokenV3_1(idleYieldToken).tokenPrice();
-        return IERC20(idleYieldToken).balanceOf(address(this)).mul(currentVirtualPrice).div(1e18);
+        return IERC20(idleYieldToken).balanceOf(address(this)).mul(_getTokenPrice()).div(1e18);
     }
 
     function balanceOfWant() public view returns (uint256) {
@@ -309,6 +311,10 @@ contract StrategyIdle is BaseStrategy {
         uint256[] memory amounts = IUniswapRouter(uniswapRouterV2).getAmountsOut(_amount, path);
 
         return amounts[amounts.length - 1];
+    }
+
+    function getTokenPrice() view public returns (uint256) {
+        return _getTokenPrice();
     }
 
     function _liquidateGovTokens() internal {
@@ -333,5 +339,49 @@ contract StrategyIdle is BaseStrategy {
 
     function _setGovTokens(address[] memory _govTokens) internal {
         govTokens = _govTokens;
+    }
+
+    function _getTokenPrice() view internal returns (uint256) {
+        /*
+         *  As per https://github.com/Idle-Labs/idle-contracts/blob/ad0f18fef670ea6a4030fe600f64ece3d3ac2202/contracts/IdleTokenGovernance.sol#L878-L900
+         *
+         *  Price on minting is currentPrice
+         *  Price on redeem must consider the fee
+         *
+         *  Below the implementation of the following redeemPrice formula
+         *
+         *  redeemPrice := underlyingAmount/idleTokenAmount
+         *
+         *  redeemPrice = currentPrice * (1 - scaledFee * ΔP%)
+         *
+         *  where:
+         *  - scaledFee   := fee/FULL_ALLOC
+         *  - ΔP% := 0 when currentPrice < userAvgPrice (no gain) and (currentPrice-userAvgPrice)/currentPrice
+         *
+         *  n.b: gain := idleTokenAmount * ΔP% * currentPrice
+         */
+
+        IIdleTokenV3_1 iyt = IIdleTokenV3_1(idleYieldToken);
+
+        uint256 userAvgPrice = iyt.userAvgPrices(address(this));
+        uint256 currentPrice = iyt.tokenPrice();
+
+        uint256 tokenPrice;
+
+        // When no deposits userAvgPrice is 0 equiv currentPrice
+        if (userAvgPrice == 0) {
+            tokenPrice = currentPrice;
+        } else {
+            uint256 fee = iyt.fee();
+
+            tokenPrice = ((currentPrice.mul(FULL_ALLOC))
+                .sub(
+                    fee.mul(
+                        currentPrice < userAvgPrice ? 0 : currentPrice.sub(userAvgPrice)
+                    )
+                )).div(FULL_ALLOC);
+        }
+
+        return tokenPrice;
     }
 }
