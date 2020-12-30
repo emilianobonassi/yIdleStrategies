@@ -369,7 +369,8 @@ contract StrategyIdle is BaseStrategy {
         uint256 tokenPrice;
 
         // When no deposits userAvgPrice is 0 equiv currentPrice
-        if (userAvgPrice == 0) {
+        // and in the case of issues
+        if (userAvgPrice == 0 || currentPrice < userAvgPrice) {
             tokenPrice = currentPrice;
         } else {
             uint256 fee = iyt.fee();
@@ -377,7 +378,7 @@ contract StrategyIdle is BaseStrategy {
             tokenPrice = ((currentPrice.mul(FULL_ALLOC))
                 .sub(
                     fee.mul(
-                        currentPrice < userAvgPrice ? 0 : currentPrice.sub(userAvgPrice)
+                         currentPrice.sub(userAvgPrice)
                     )
                 )).div(FULL_ALLOC);
         }
