@@ -24,7 +24,7 @@ contract StrategyIdleDAI_BY is StrategyIdle {
   constructor(
     address _vault
   )
-  StrategyIdle(_vault)
+  StrategyIdle()
   public {
     address[] memory _govTokens = new address[](2);
     _govTokens[0] = __comp;

@@ -51,7 +51,7 @@ contract StrategyIdle is BaseStrategyInitializable {
         _;
     }
 
-    constructor(address _vault) public BaseStrategyInitializable(_vault, false) {}
+    constructor() public BaseStrategyInitializable(address(0), false) {}
 
     function init(
         address _vault,
