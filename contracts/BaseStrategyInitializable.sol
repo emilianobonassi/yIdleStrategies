@@ -147,7 +147,7 @@ abstract contract BaseStrategyInitializable {
      *  `apiVersion()` function above.
      * @return This Strategy's name.
      */
-    function name() external virtual pure returns (string memory);
+    function name() external virtual view returns (string memory);
 
     VaultAPI public vault;
     address public strategist;

@@ -129,8 +129,8 @@ contract StrategyIdle is BaseStrategyInitializable {
 
     // ******** OVERRIDE THESE METHODS FROM BASE CONTRACT ************
 
-    function name() external override virtual pure returns (string memory) {
-        return "StrategyIdle";
+    function name() external override view returns (string memory) {
+        return string(abi.encodePacked("StrategyIdle", IIdleTokenV3_1(idleYieldToken).symbol()));
     }
 
     function estimatedTotalAssets() public override view returns (uint256) {

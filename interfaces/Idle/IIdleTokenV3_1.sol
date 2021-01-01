@@ -81,4 +81,11 @@ interface IIdleTokenV3_1 {
      * @return : whether has rebalanced or not
      */
     function rebalance() external returns (bool);
+
+
+    /**
+     * @dev Returns the symbol of the token, usually a shorter version of the
+     * name.
+     */
+    function symbol() external view returns (string memory);
 }
