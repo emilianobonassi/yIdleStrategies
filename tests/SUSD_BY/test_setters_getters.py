@@ -13,5 +13,5 @@ def test_incorrect_vault(pm, guardian, gov, strategist, rewards, StrategyIdleSUS
     token = guardian.deploy(Token)
     Vault = pm(config["dependencies"][0]).Vault
     vault = guardian.deploy(Vault, token, gov, rewards, "", "")
-    with brownie.reverts("Vault want is not SUSD"):
+    with brownie.reverts("Vault want is different from Idle token underlying"):
         strategy = strategist.deploy(StrategyIdleSUSD_BY, vault)

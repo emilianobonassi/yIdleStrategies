@@ -87,6 +87,8 @@ contract StrategyIdle is BaseStrategyInitializable {
     ) internal {
         _init(_vault, _onBehalfOf);
 
+        require(address(want) == IIdleTokenV3_1(_idleYieldToken).token(), "Vault want is different from Idle token underlying");
+
         govTokens = _govTokens;
         weth = _weth;
         idleReservoir = _idleReservoir;

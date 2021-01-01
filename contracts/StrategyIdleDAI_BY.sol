@@ -14,7 +14,6 @@ contract StrategyIdleDAI_BY is StrategyIdle {
   address constant public __comp = address(0xc00e94Cb662C3520282E6f5717214004A7f26888);
   address constant public __idle = address(0x875773784Af8135eA0ef43b5a374AaD105c5D39e);
   address constant public __weth = address(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2);
-  address constant public __dai = address(0x6B175474E89094C44Da98b954EedeAC495271d0F);
 
   address constant public __idleReservoir = address(0x031f71B5369c251a6544c41CE059e6b3d61e42C6);
   
@@ -41,8 +40,6 @@ contract StrategyIdleDAI_BY is StrategyIdle {
         __referral,
         __uniswapRouterV2
     );
-
-    require(address(want) == __dai, "Vault want is not DAI");
   }
 
   function name() external override pure returns (string memory) {
