@@ -25,23 +25,24 @@ contract StrategyIdleDAI_BY is StrategyIdle {
   constructor(
     address _vault
   )
-  StrategyIdle(
+  StrategyIdle(_vault)
+  public {
+    address[] memory _govTokens = new address[](2);
+    _govTokens[0] = __comp;
+    _govTokens[1] = __idle;
+
+    _init(
         _vault,
-        new address[](0),
+        msg.sender,
+        _govTokens,
         __weth,
         __idleReservoir,
         __idleYieldToken,
         __referral,
         __uniswapRouterV2
-  )
-  public {
+    );
+
     require(address(want) == __dai, "Vault want is not DAI");
-
-    address[] memory _govTokens = new address[](2);
-    _govTokens[0] = __comp;
-    _govTokens[1] = __idle;
-
-    _setGovTokens(_govTokens);
   }
 
   function name() external override pure returns (string memory) {

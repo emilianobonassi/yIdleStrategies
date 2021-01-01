@@ -22,26 +22,27 @@ contract StrategyIdleSUSD_BY is StrategyIdle {
   address constant public __referral = address(0x652c1c23780d1A015938dD58b4a65a5F9eFBA653);
   address constant public __uniswapRouterV2 = address(0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D);
 
-  constructor(
+constructor(
     address _vault
   )
-  StrategyIdle(
+  StrategyIdle(_vault)
+  public {
+    address[] memory _govTokens = new address[](2);
+    _govTokens[0] = __comp;
+    _govTokens[1] = __idle;
+
+    _init(
         _vault,
-        new address[](0),
+        msg.sender,
+        _govTokens,
         __weth,
         __idleReservoir,
         __idleYieldToken,
         __referral,
         __uniswapRouterV2
-  )
-  public {
+    );
+
     require(address(want) == __susd, "Vault want is not SUSD");
-
-    address[] memory _govTokens = new address[](2);
-    _govTokens[0] = __comp;
-    _govTokens[1] = __idle;
-
-    _setGovTokens(_govTokens);
   }
 
   function name() external override pure returns (string memory) {

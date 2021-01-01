@@ -7,9 +7,9 @@ pragma experimental ABIEncoderV2;
 
 // These are the core Yearn libraries
 import {
-    BaseStrategy,
+    BaseStrategyInitializable,
     StrategyParams
-} from "@yearnvaults/contracts/BaseStrategy.sol";
+} from "./BaseStrategyInitializable.sol";
 import "@openzeppelinV3/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelinV3/contracts/math/Math.sol";
 import "@openzeppelinV3/contracts/math/SafeMath.sol";
@@ -20,18 +20,18 @@ import "../interfaces/Idle/IIdleTokenV3_1.sol";
 import "../interfaces/Idle/IdleReservoir.sol";
 import "../interfaces/Uniswap/IUniswapRouter.sol";
 
-contract StrategyIdle is BaseStrategy {
+contract StrategyIdle is BaseStrategyInitializable {
     using SafeERC20 for IERC20;
     using Address for address;
     using SafeMath for uint256;
 
     uint256 constant public FULL_ALLOC = 100000;
 
-    address immutable public uniswapRouterV2;
-    address immutable public weth;
-    address immutable public idleReservoir;
-    address immutable public idleYieldToken;
-    address immutable public referral;
+    address public uniswapRouterV2;
+    address public weth;
+    address public idleReservoir;
+    address public idleYieldToken;
+    address public referral;
 
     bool public checkVirtualPrice;
     uint256 public lastVirtualPrice;
@@ -51,15 +51,42 @@ contract StrategyIdle is BaseStrategy {
         _;
     }
 
-    constructor(
+    constructor(address _vault) public BaseStrategyInitializable(_vault, false) {}
+
+    function init(
         address _vault,
+        address _onBehalfOf,
         address[] memory _govTokens,
         address _weth,
         address _idleReservoir,
         address _idleYieldToken,
         address _referral,
         address _uniswapRouterV2
-    ) public BaseStrategy(_vault) {
+    ) external {
+        _init(
+            _vault,
+            _onBehalfOf,
+            _govTokens,
+            _weth,
+            _idleReservoir,
+            _idleYieldToken,
+            _referral,
+            _uniswapRouterV2
+        );
+    }
+
+    function _init(
+        address _vault,
+        address _onBehalfOf,
+        address[] memory _govTokens,
+        address _weth,
+        address _idleReservoir,
+        address _idleYieldToken,
+        address _referral,
+        address _uniswapRouterV2
+    ) internal {
+        _init(_vault, _onBehalfOf);
+
         govTokens = _govTokens;
         weth = _weth;
         idleReservoir = _idleReservoir;
