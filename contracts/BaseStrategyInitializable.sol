@@ -129,6 +129,7 @@ interface StrategyAPI {
 abstract contract BaseStrategyInitializable {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
+    string public metadataURI;
 
     /**
      * @notice
@@ -138,7 +139,7 @@ abstract contract BaseStrategyInitializable {
      * @return A string which holds the current API version of this contract.
      */
     function apiVersion() public pure returns (string memory) {
-        return "0.3.0";
+        return "0.3.1";
     }
 
     /**
@@ -191,6 +192,8 @@ abstract contract BaseStrategyInitializable {
     event UpdatedDebtThreshold(uint256 debtThreshold);
 
     event EmergencyExitEnabled();
+
+    event UpdatedMetadataURI(string metadataURI);
 
     // The maximum number of seconds between harvest calls. See
     // `setMaxReportDelay()` for more details.
@@ -276,6 +279,8 @@ abstract contract BaseStrategyInitializable {
         strategist = _onBehalfOf;
         rewards = _onBehalfOf;
         keeper = _onBehalfOf;
+
+        vault.approve(rewards, uint256(-1)); // Allow rewards to be pulled
     }
 
     /**
@@ -312,16 +317,17 @@ abstract contract BaseStrategyInitializable {
 
     /**
      * @notice
-     *  Used to change `rewards`. Any distributed rewards will cease flowing
-     *  to the old address and begin flowing to this address once the change
-     *  is in effect.
+     *  Used to change `rewards`. EOA or smart contract which has the permission
+     *  to pull rewards from the vault.
      *
      *  This may only be called by the strategist.
-     * @param _rewards The address to use for collecting rewards.
+     * @param _rewards The address to use for pulling rewards.
      */
     function setRewards(address _rewards) external onlyStrategist {
         require(_rewards != address(0));
+        vault.approve(rewards, 0);
         rewards = _rewards;
+        vault.approve(rewards, uint256(-1));
         emit UpdatedRewards(_rewards);
     }
 
@@ -373,6 +379,19 @@ abstract contract BaseStrategyInitializable {
     function setDebtThreshold(uint256 _debtThreshold) external onlyAuthorized {
         debtThreshold = _debtThreshold;
         emit UpdatedDebtThreshold(_debtThreshold);
+    }
+
+    /**
+     * @notice
+     *  Used to change `metadataURI`. `metadataURI` is used to store the URI
+     * of the file describing the strategy.
+     *
+     *  This may only be called by governance or the strategist.
+     * @param _metadataURI The URI that describe the strategy.
+     */
+    function setMetadataURI(string calldata _metadataURI) external onlyAuthorized {
+        metadataURI = _metadataURI;
+        emit UpdatedMetadataURI(_metadataURI);
     }
 
     /**
@@ -478,21 +497,6 @@ abstract contract BaseStrategyInitializable {
      * NOTE: The invariant `_liquidatedAmount + _loss <= _amountNeeded` should always be maintained
      */
     function liquidatePosition(uint256 _amountNeeded) internal virtual returns (uint256 _liquidatedAmount, uint256 _loss);
-
-    /**
-     *  `Harvest()` calls this function after shares are created during
-     *  `vault.report()`. You can customize this function to any share
-     *  distribution mechanism you want.
-     *
-     *   See `vault.report()` for further details.
-     */
-    function distributeRewards() internal virtual {
-        // Transfer 100% of newly-minted shares awarded to this contract to the rewards address.
-        uint256 balance = vault.balanceOf(address(this));
-        if (balance > 0) {
-            vault.transfer(rewards, balance);
-        }
-    }
 
     /**
      * @notice
@@ -635,9 +639,6 @@ abstract contract BaseStrategyInitializable {
         // which is the amount it has earned since the last time it reported to
         // the Vault.
         debtOutstanding = vault.report(profit, loss, debtPayment);
-
-        // Distribute any reward shares earned by the strategy on this report
-        distributeRewards();
 
         // Check if free returns are left, and re-invest them
         adjustPosition(debtOutstanding);
