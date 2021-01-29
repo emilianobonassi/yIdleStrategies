@@ -1,5 +1,5 @@
 import pytest
-from brownie import config
+from brownie import config, Wei
 
 @pytest.fixture
 def gov(accounts):
@@ -48,7 +48,8 @@ def tokenWhale(accounts, Contract, token):
 @pytest.fixture
 def vault(pm, gov, rewards, guardian, token):
     Vault = pm(config["dependencies"][0]).Vault
-    vault = guardian.deploy(Vault, token, gov, rewards, "", "")
+    vault = guardian.deploy(Vault)
+    vault.initialize(token, gov, rewards, "", "")
     yield vault
 
 

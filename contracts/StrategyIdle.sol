@@ -10,11 +10,11 @@ import {
     BaseStrategyInitializable,
     StrategyParams
 } from "./BaseStrategyInitializable.sol";
-import "@openzeppelinV3/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelinV3/contracts/math/Math.sol";
-import "@openzeppelinV3/contracts/math/SafeMath.sol";
-import "@openzeppelinV3/contracts/utils/Address.sol";
-import "@openzeppelinV3/contracts/token/ERC20/SafeERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/math/Math.sol";
+import "@openzeppelin/contracts/math/SafeMath.sol";
+import "@openzeppelin/contracts/utils/Address.sol";
+import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 
 import "../interfaces/Idle/IIdleTokenV3_1.sol";
 import "../interfaces/Idle/IdleReservoir.sol";
@@ -173,7 +173,8 @@ contract StrategyIdle is BaseStrategyInitializable {
 
         // Try to pay debt asap
         if (_debtOutstanding > 0) {
-            uint256 _amountFreed = liquidatePosition(_debtOutstanding);
+            uint256 _amountFreed = 0;
+            (_amountFreed, _loss) = liquidatePosition(_debtOutstanding);
             // Using Math.min() since we might free more than needed
             _debtPayment = Math.min(_amountFreed, _debtOutstanding);
         }
@@ -222,29 +223,6 @@ contract StrategyIdle is BaseStrategyInitializable {
     }
 
     /*
-     * Make as much capital as possible "free" for the Vault to take. Some
-     * slippage is allowed. The goal is for the strategy to divest as quickly as possible
-     * while not suffering exorbitant losses. This function is used during emergency exit
-     * instead of `prepareReturn()`. This method returns any realized losses incurred, and
-     * should also return the amount of `want` tokens available to repay outstanding debt
-     * to the Vault.
-     */
-    function exitPosition(uint256 _debtOutstanding)
-        internal
-        override
-        returns (uint256 _profit, uint256 _loss, uint256 _debtPayment)
-    {
-        if(checkVirtualPrice) {
-            // Temporarily suspend virtual price check
-            checkVirtualPrice = false;
-            (_profit, _loss, _debtPayment) = prepareReturn(_debtOutstanding);
-            checkVirtualPrice = true;
-        } else {
-            return prepareReturn(_debtOutstanding);
-        }
-    }
-
-    /*
      * Liquidate as many assets as possible to `want`, irregardless of slippage,
      * up to `_amountNeeded`. Any excess should be re-invested here as well.
      */
@@ -252,10 +230,9 @@ contract StrategyIdle is BaseStrategyInitializable {
         internal
         override
         updateVirtualPrice
-        returns (uint256 _amountFreed)
+        returns (uint256 _liquidatedAmount, uint256 _loss)
     {
         // TODO: Do stuff here to free up to `_amountNeeded` from all positions back into `want`
-        // NOTE: Return `_amountFreed`, which should be `<= _amountNeeded`
 
         if (balanceOfWant() < _amountNeeded) {
             // Note: potential drift by 1 wei, reduce to max balance in the case approx is rounded up
@@ -281,8 +258,15 @@ contract StrategyIdle is BaseStrategyInitializable {
             }
         }
 
-        // Min, otw vault accounting breaks
-        _amountFreed = Math.min(balanceOfWant(), _amountNeeded);
+        // _liquidatedAmount min(_amountNeeded, balanceOfWant), otw vault accounting breaks
+        uint256 balanceOfWant = balanceOfWant();
+
+        if (balanceOfWant >= _amountNeeded) {
+            _liquidatedAmount = _amountNeeded;
+        } else {
+            _liquidatedAmount = balanceOfWant;
+            _loss = _amountNeeded.sub(balanceOfWant);
+        }
     }
 
     // NOTE: Can override `tendTrigger` and `harvestTrigger` if necessary

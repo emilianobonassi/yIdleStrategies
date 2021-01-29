@@ -6,7 +6,8 @@ from brownie import Wei
 def test_increasing_debt_limit(vault, gov, strategy, token, tokenWhale, strategist):
     decimals = token.decimals()
     token.approve(vault, 2 ** 256 - 1, {"from": tokenWhale})
-    vault.addStrategy(strategy, 100 * (10 ** decimals), 0, 0, {"from": gov})
+    vault.setDepositLimit(100 * (10 ** decimals), {"from": gov})
+    vault.addStrategy(strategy, 10_000, 0, 0, {"from": gov})
     vault.deposit(100 * (10 ** decimals), {"from": tokenWhale})
 
     idleYieldToken = strategy.idleYieldToken()
@@ -18,16 +19,13 @@ def test_increasing_debt_limit(vault, gov, strategy, token, tokenWhale, strategi
     assert token.balanceOf(strategy) == 0
     assert (idleBalanceAfterHarvest-idleBalanceBeforeHarvest) == 100 * (10 ** decimals)
 
-    vault.deposit(100 * (10 ** decimals), {"from": tokenWhale})
-    idleBalanceBeforeHarvest = token.balanceOf(idleYieldToken)
-    strategy.harvest({"from": gov})
-    idleBalanceAfterHarvest = token.balanceOf(idleYieldToken)
-    # Nothing should happen because the debtLimit is still 100 ether
-    assert token.balanceOf(strategy) == 0
-    assert (idleBalanceAfterHarvest-idleBalanceBeforeHarvest) == 0
+    # Should revert because limit reached
+    with brownie.reverts():
+        vault.deposit(100 * (10 ** decimals), {"from": tokenWhale})
 
     # Once the debt limit is increased, strategy should have invested 200 ether
-    vault.updateStrategyDebtLimit(strategy, 200 * (10 ** decimals), {"from": gov})
+    vault.setDepositLimit(200 * (10 ** decimals), {"from": gov})
+    vault.deposit(100 * (10 ** decimals), {"from": tokenWhale})
     idleBalanceBeforeHarvest = token.balanceOf(idleYieldToken)
     strategy.harvest({"from": gov})
     idleBalanceAfterHarvest = token.balanceOf(idleYieldToken)
@@ -38,7 +36,8 @@ def test_increasing_debt_limit(vault, gov, strategy, token, tokenWhale, strategi
 def test_decrease_debt_limit(vault, gov, strategy, token, tokenWhale, strategist, interface, Token):
     decimals = token.decimals()
     token.approve(vault, 2 ** 256 - 1, {"from": tokenWhale})
-    vault.addStrategy(strategy, 200 * (10 ** decimals), 0, 0, {"from": gov})
+    vault.setDepositLimit(200 * (10 ** decimals), {"from": gov})
+    vault.addStrategy(strategy, 10_000, 0, 0, {"from": gov})
     vault.deposit(200 * (10 ** decimals), {"from": tokenWhale})
 
     idleYieldToken = strategy.idleYieldToken()
@@ -51,7 +50,7 @@ def test_decrease_debt_limit(vault, gov, strategy, token, tokenWhale, strategist
     assert (idleBalanceAfterHarvest-idleBalanceBeforeHarvest) == 200 * (10 ** decimals)
 
     # Once the debt limit is increased, strategy should have invested 200 ether
-    vault.updateStrategyDebtLimit(strategy, 100 * (10 ** decimals), {"from": gov})
+    vault.updateStrategyDebtRatio(strategy, 5_000, {"from": gov})
     assert vault.debtOutstanding(strategy) == 100 * (10 ** decimals)
     idleBalanceBeforeHarvest = token.balanceOf(idleYieldToken)
     strategy.harvest({"from": gov})

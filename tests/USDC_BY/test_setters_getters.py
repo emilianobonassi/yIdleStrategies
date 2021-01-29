@@ -12,7 +12,8 @@ def test_constructor(vault, gov, strategy, strategist, comp, idle):
 def test_incorrect_vault(pm, guardian, gov, strategist, rewards, strategyFactory, Token):
     token = guardian.deploy(Token)
     Vault = pm(config["dependencies"][0]).Vault
-    vault = guardian.deploy(Vault, token, gov, rewards, "", "")
+    vault = guardian.deploy(Vault)
+    vault.initialize(token, gov, rewards, "", "")
     with brownie.reverts("Vault want is different from Idle token underlying"):
         strategy = strategyFactory(vault)
 
