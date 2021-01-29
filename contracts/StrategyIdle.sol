@@ -285,7 +285,7 @@ contract StrategyIdle is BaseStrategyInitializable {
         // Transfer gov tokens to new strategy
         for (uint256 i = 0; i < govTokens.length; i++) {
             IERC20 govToken = IERC20(govTokens[i]);
-            govToken.transfer(_newStrategy, govToken.balanceOf(address(this)));
+            govToken.safeTransfer(_newStrategy, govToken.balanceOf(address(this)));
         }
     }
 

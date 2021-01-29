@@ -3,6 +3,7 @@ pragma solidity >=0.6.0 <0.7.0;
 pragma experimental ABIEncoderV2;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 
 struct StrategyParams {
@@ -127,6 +128,7 @@ interface StrategyAPI {
  */
 abstract contract BaseStrategyInitializable {
     using SafeMath for uint256;
+    using SafeERC20 for IERC20;
 
     /**
      * @notice
@@ -269,7 +271,7 @@ abstract contract BaseStrategyInitializable {
 
         vault = VaultAPI(_vault);
         want = IERC20(vault.token());
-        want.approve(_vault, uint256(-1)); // Give Vault unlimited access (might save gas)
+        want.safeApprove(_vault, uint256(-1)); // Give Vault unlimited access (might save gas)
 
         strategist = _onBehalfOf;
         rewards = _onBehalfOf;
@@ -657,7 +659,7 @@ abstract contract BaseStrategyInitializable {
         uint256 amountFreed;
         (amountFreed, _loss) = liquidatePosition(_amountNeeded);
         // Send it directly back (NOTE: Using `msg.sender` saves some gas here)
-        want.transfer(msg.sender, amountFreed);
+        want.safeTransfer(msg.sender, amountFreed);
         // NOTE: Reinvest anything leftover on next `tend`/`harvest`
     }
 
@@ -681,7 +683,7 @@ abstract contract BaseStrategyInitializable {
         require(msg.sender == address(vault) || msg.sender == governance());
         require(BaseStrategyInitializable(_newStrategy).vault() == vault);
         prepareMigration(_newStrategy);
-        want.transfer(_newStrategy, want.balanceOf(address(this)));
+        want.safeTransfer(_newStrategy, want.balanceOf(address(this)));
     }
 
     /**
@@ -744,6 +746,6 @@ abstract contract BaseStrategyInitializable {
         address[] memory _protectedTokens = protectedTokens();
         for (uint256 i; i < _protectedTokens.length; i++) require(_token != _protectedTokens[i], "!protected");
 
-        IERC20(_token).transfer(governance(), IERC20(_token).balanceOf(address(this)));
+        IERC20(_token).safeTransfer(governance(), IERC20(_token).balanceOf(address(this)));
     }
 }
