@@ -41,7 +41,7 @@ def token(Token):
 def tokenWhale(accounts, Contract, token):
     a = accounts[5]
     binance = accounts.at("0xf977814e90da44bfa03b6295a0616a897441acec", force=True)
-    bal = 1e6 * 1e6
+    bal = 10 * 1e6 * 1e6
     token.transfer(a, bal, {"from": binance})
     yield a
 
