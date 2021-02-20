@@ -236,7 +236,8 @@ contract StrategyIdle is BaseStrategyInitializable {
 
         if (balanceOfWant() < _amountNeeded) {
             // Note: potential drift by 1 wei, reduce to max balance in the case approx is rounded up
-            uint256 valueToRedeemApprox = (_amountNeeded.sub(balanceOfWant())).mul(1e18).div(lastVirtualPrice) + 1;
+            uint256 amountToRedeem = _amountNeeded.sub(balanceOfWant());
+            uint256 valueToRedeemApprox = amountToRedeem.mul(1e18).div(lastVirtualPrice) + 1;
             uint256 valueToRedeem = Math.min(
                 valueToRedeemApprox,
                 IERC20(idleYieldToken).balanceOf(address(this))
@@ -249,10 +250,10 @@ contract StrategyIdle is BaseStrategyInitializable {
                 uint256 postBalanceOfWant = balanceOfWant();
 
                 // Note: could be equal, prefer >= in case of rounding
-                // We just need that is at least the _amountNeeded, not below
+                // We just need that is at least the amountToRedeem, not below
                 require(
-                    (postBalanceOfWant.sub(preBalanceOfWant)) >= _amountNeeded,
-                    'Redeemed amount must be >= _amountNeeded');
+                    (postBalanceOfWant.sub(preBalanceOfWant)) >= amountToRedeem,
+                    'Redeemed amount must be >= amountToRedeem');
             } else {
                 IIdleTokenV3_1(idleYieldToken).redeemIdleToken(valueToRedeem);
             }
