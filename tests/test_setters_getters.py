@@ -4,8 +4,8 @@ from brownie import Wei
 from brownie import config
 
 
-def test_constructor(vault, gov, strategy, strategist, comp, idle):
-    assert strategy.name() == "StrategyIdleidleWBTCYield"
+def test_constructor(vault, gov, strategy, strategist, comp, idle, token):
+    assert strategy.name() == "StrategyIdleidle"+ token.symbol().upper() + "Yield"
     assert strategy.govTokens(0) == comp
     assert strategy.govTokens(1) == idle
 
