@@ -168,15 +168,24 @@ contract StrategyIdle is BaseStrategyInitializable {
             alreadyRedeemed = false;
         }
 
-        // Assure IdleController has IDLE tokens
+        // Assure IdleController has IDLE tokens during redeem
         IdleReservoir(idleReservoir).drip();
 
-        // Try to pay debt asap
-        if (_debtOutstanding > 0) {
-            uint256 _amountFreed = 0;
-            (_amountFreed, _loss) = liquidatePosition(_debtOutstanding);
-            // Using Math.min() since we might free more than needed
-            _debtPayment = Math.min(_amountFreed, _debtOutstanding);
+        // Get debt, currentValue (want+idle), only want
+        uint256 debt = vault.strategies(address(this)).totalDebt;
+        uint256 currentValue = estimatedTotalAssets();
+        uint256 wantBalance = balanceOfWant();
+
+        _profit = debt < currentValue ? currentValue.sub(debt) : 0;
+
+        // To withdraw = profit from lending + _debtOutstanding
+        uint256 toFree = _debtOutstanding.add(_profit);
+
+        // In the case want is not enough, divest from idle
+        if (toFree > wantBalance) {
+            // Divest only the missing part = toFree-wantBalance
+            toFree = toFree.sub(wantBalance);
+            freeAmount(toFree);
         }
 
         // Claim only if not done in the previous liquidate step during redeem
@@ -189,11 +198,21 @@ contract StrategyIdle is BaseStrategyInitializable {
         // If we have govTokens, let's convert them!
         // This is done in a separate step since there might have been
         // a migration or an exitPosition
-        
-        // This might be > 0 because of a strategy migration
-        uint256 balanceOfWantBeforeSwap = balanceOfWant();
         _liquidateGovTokens();
-        _profit = balanceOfWant().sub(balanceOfWantBeforeSwap);
+
+        // Recalculate profit
+        currentValue = estimatedTotalAssets();
+        if (debt < currentValue) {
+            // Potential profit
+            wantBalance = balanceOfWant();
+            (_debtPayment, _profit) = wantBalance < _debtOutstanding ?
+                (wantBalance, 0) :
+                (_debtOutstanding, wantBalance.sub(_debtOutstanding));
+        } else {
+            // Loss
+            _loss = debt.sub(currentValue);
+            _profit = 0;
+        }
     }
 
     /*
@@ -223,6 +242,38 @@ contract StrategyIdle is BaseStrategyInitializable {
     }
 
     /*
+    * Safely free an amount from Idle protocol
+    */
+    function freeAmount(uint256 _amount)
+        internal
+        updateVirtualPrice
+        returns (uint256 freedAmount)
+    {
+        uint256 valueToRedeemApprox = _amount.mul(1e18).div(lastVirtualPrice) + 1;
+        uint256 valueToRedeem = Math.min(
+            valueToRedeemApprox,
+            IERC20(idleYieldToken).balanceOf(address(this))
+        );
+
+        alreadyRedeemed = true;
+        
+        uint256 preBalanceOfWant = balanceOfWant();
+        IIdleTokenV3_1(idleYieldToken).redeemIdleToken(valueToRedeem);
+        freedAmount = balanceOfWant().sub(preBalanceOfWant);
+
+        if (checkRedeemedAmount) {
+            // Note: could be equal, prefer >= in case of rounding
+            // We just need that is at least the amountToRedeem, not below
+            require(
+                freedAmount >= _amount,
+                'Redeemed amount must be >= amountToRedeem');
+        }
+
+
+        return freedAmount;
+    }
+
+    /*
      * Liquidate as many assets as possible to `want`, irregardless of slippage,
      * up to `_amountNeeded`. Any excess should be re-invested here as well.
      */
@@ -237,26 +288,7 @@ contract StrategyIdle is BaseStrategyInitializable {
         if (balanceOfWant() < _amountNeeded) {
             // Note: potential drift by 1 wei, reduce to max balance in the case approx is rounded up
             uint256 amountToRedeem = _amountNeeded.sub(balanceOfWant());
-            uint256 valueToRedeemApprox = amountToRedeem.mul(1e18).div(lastVirtualPrice) + 1;
-            uint256 valueToRedeem = Math.min(
-                valueToRedeemApprox,
-                IERC20(idleYieldToken).balanceOf(address(this))
-            );
-
-            alreadyRedeemed = true;
-            if (checkRedeemedAmount) {
-                uint256 preBalanceOfWant = balanceOfWant();
-                IIdleTokenV3_1(idleYieldToken).redeemIdleToken(valueToRedeem);
-                uint256 postBalanceOfWant = balanceOfWant();
-
-                // Note: could be equal, prefer >= in case of rounding
-                // We just need that is at least the amountToRedeem, not below
-                require(
-                    (postBalanceOfWant.sub(preBalanceOfWant)) >= amountToRedeem,
-                    'Redeemed amount must be >= amountToRedeem');
-            } else {
-                IIdleTokenV3_1(idleYieldToken).redeemIdleToken(valueToRedeem);
-            }
+            freeAmount(amountToRedeem);
         }
 
         // _liquidatedAmount min(_amountNeeded, balanceOfWant), otw vault accounting breaks
@@ -307,7 +339,12 @@ contract StrategyIdle is BaseStrategyInitializable {
     }
 
     function balanceOnIdle() public view returns (uint256) {
-        return IERC20(idleYieldToken).balanceOf(address(this)).mul(_getTokenPrice()).div(1e18);
+        uint256 idleTokenBalance = IERC20(idleYieldToken).balanceOf(address(this));
+
+        // Always approximate by excess
+        return idleTokenBalance > 0 ?
+            idleTokenBalance.mul(_getTokenPrice()).div(1e18).add(1) : 0
+        ;
     }
 
     function balanceOfWant() public view returns (uint256) {
