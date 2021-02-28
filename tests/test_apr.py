@@ -5,8 +5,8 @@ from brownie import Wei
 def stateOfVault(vault, strategy):
     print('\n----state of vault----')
     strState = vault.strategies(strategy)
-    totalDebt = strState[5].to('ether')
-    totalReturns = strState[6].to('ether')
+    totalDebt = strState[6].to('ether')
+    totalReturns = strState[7].to('ether')
     print(f'Total Strategy Debt: {totalDebt:.5f}')
     print(f'Total Strategy Returns: {totalReturns:.5f}')
     balance = vault.totalAssets().to('ether')
@@ -47,7 +47,7 @@ def test_apr(vault, gov, strategy, token, tokenWhale, strategist, keeper, chain,
     decimals = token.decimals()
     token.approve(vault, 2 ** 256 - 1, {"from": tokenWhale})
     vault.setDepositLimit(2 ** 256 - 1, {"from": gov})
-    vault.addStrategy(strategy, 10_000, 0, 0, {"from": gov})
+    vault.addStrategy(strategy, 10_000, 0, 2 ** 256 - 1, 0, {"from": gov})
     
     vault.deposit(aprDeposit * (10 ** decimals), {"from": tokenWhale})
     idleToken.rebalance({"from": tokenWhale})
@@ -76,7 +76,7 @@ def test_apr(vault, gov, strategy, token, tokenWhale, strategist, keeper, chain,
 
         profit = (vault.totalAssets() - startingBalance)/(10 ** decimals)
         strState = vault.strategies(strategy)
-        totalReturns = strState[6]
+        totalReturns = strState[7]
         totaleth = totalReturns/(10 ** decimals)
         print(f'Real Profit: {profit:.5f}')
         difff= profit-totaleth

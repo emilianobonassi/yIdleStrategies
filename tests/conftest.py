@@ -105,7 +105,6 @@ def vault(pm, gov, rewards, guardian, token):
     vault.initialize(token, gov, rewards, "", "")
     yield vault
 
-
 @pytest.fixture
 def strategist(accounts):
     # You! Our new Strategist!
@@ -117,18 +116,13 @@ def keeper(accounts):
     # This is our trusty bot!
     yield accounts[4]
 
-
-@pytest.fixture()
-def strategyLogic(strategist, StrategyIdle):
-    yield strategist.deploy(StrategyIdle)
-
 @pytest.fixture()
 def strategy(vault, strategyFactory):
     yield strategyFactory(vault)
 
 @pytest.fixture()
-def strategyFactory(strategist, keeper, strategyLogic, proxyFactoryInitializable, idleToken, comp, idle, StrategyIdle):
-    def factory(vault):
+def strategyFactory(strategist, keeper, proxyFactoryInitializable, idleToken, comp, idle, StrategyIdle):
+    def factory(vault, proxy=True):
         onBehalfOf = strategist
         govTokens = [
             comp,
@@ -139,23 +133,37 @@ def strategyFactory(strategist, keeper, strategyLogic, proxyFactoryInitializable
         referral = "0x652c1c23780d1A015938dD58b4a65a5F9eFBA653"
         uniswapRouterV2 = "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D"
 
-        data = strategyLogic.init.encode_input(
+        strategyLogic = StrategyIdle.deploy(
             vault,
-            onBehalfOf,
             govTokens,
             weth,
             idleReservoir,
             idleToken,
             referral,
-            uniswapRouterV2
+            uniswapRouterV2,
+            {"from": strategist}
         )
 
-        tx = proxyFactoryInitializable.deployMinimal(
-            strategyLogic,
-            data,
-            {"from": strategist})
+        strategyAddress = strategyLogic.address
 
-        strategyAddress =  (tx.events["ProxyCreated"]["proxy"])
+        if proxy:
+            data = strategyLogic.init.encode_input(
+                vault,
+                onBehalfOf,
+                govTokens,
+                weth,
+                idleReservoir,
+                idleToken,
+                referral,
+                uniswapRouterV2
+            )
+            tx = proxyFactoryInitializable.deployMinimal(
+                strategyLogic,
+                data,
+                {"from": strategist})
+
+            strategyAddress = (tx.events["ProxyCreated"]["proxy"])
+
         strategy = StrategyIdle.at(strategyAddress, owner=strategist)
         strategy.setKeeper(keeper)
         return strategy

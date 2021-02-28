@@ -7,7 +7,7 @@ def test_over_redeem(vault, gov, strategy, token, tokenWhale, strategist):
     decimals = token.decimals()
     token.approve(vault, 2 ** 256 - 1, {"from": tokenWhale})
     vault.setDepositLimit(100 * (10 ** decimals), {"from": gov})
-    vault.addStrategy(strategy, 10_000, 0, 0, {"from": gov})
+    vault.addStrategy(strategy, 10_000, 0, 2 ** 256 - 1, 0, {"from": gov})
     vault.deposit(100 * (10 ** decimals), {"from": tokenWhale})
 
     idleYieldToken = strategy.idleYieldToken()

@@ -18,7 +18,21 @@ def test_incorrect_vault(pm, guardian, gov, strategist, rewards, strategyFactory
         strategy = strategyFactory(vault)
 
 def test_double_init(strategy, strategist):
-    with brownie.reverts("You can only initialize once"):
+    with brownie.reverts("Strategy already initialized"):
+        strategy.init(
+            strategist,
+            strategist,
+            [],
+            strategist,
+            strategist,
+            strategist,
+            strategist,
+            strategist
+        )
+
+def test_double_init_no_proxy(strategyFactory, vault, strategist):
+    strategy = strategyFactory(vault, False)
+    with brownie.reverts("Strategy already initialized"):
         strategy.init(
             strategist,
             strategist,
