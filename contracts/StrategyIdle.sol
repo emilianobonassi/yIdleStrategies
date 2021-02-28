@@ -7,9 +7,8 @@ pragma experimental ABIEncoderV2;
 
 // These are the core Yearn libraries
 import {
-    BaseStrategyInitializable,
-    StrategyParams
-} from "./BaseStrategyInitializable.sol";
+    BaseStrategyInitializable
+} from "@yearnvaults/contracts/BaseStrategy.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/math/Math.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
@@ -51,7 +50,24 @@ contract StrategyIdle is BaseStrategyInitializable {
         _;
     }
 
-    constructor() public BaseStrategyInitializable(address(0), false) {}
+    constructor(
+        address _vault,
+        address[] memory _govTokens,
+        address _weth,
+        address _idleReservoir,
+        address _idleYieldToken,
+        address _referral,
+        address _uniswapRouterV2
+    ) public BaseStrategyInitializable(_vault) {
+        _init(
+            _govTokens,
+            _weth,
+            _idleReservoir,
+            _idleYieldToken,
+            _referral,
+            _uniswapRouterV2
+        );
+    }
 
     function init(
         address _vault,
@@ -63,9 +79,9 @@ contract StrategyIdle is BaseStrategyInitializable {
         address _referral,
         address _uniswapRouterV2
     ) external {
+        super._initialize(_vault, _onBehalfOf, _onBehalfOf, _onBehalfOf);
+
         _init(
-            _vault,
-            _onBehalfOf,
             _govTokens,
             _weth,
             _idleReservoir,
@@ -76,8 +92,6 @@ contract StrategyIdle is BaseStrategyInitializable {
     }
 
     function _init(
-        address _vault,
-        address _onBehalfOf,
         address[] memory _govTokens,
         address _weth,
         address _idleReservoir,
@@ -85,8 +99,6 @@ contract StrategyIdle is BaseStrategyInitializable {
         address _referral,
         address _uniswapRouterV2
     ) internal {
-        _init(_vault, _onBehalfOf);
-
         require(address(want) == IIdleTokenV3_1(_idleYieldToken).token(), "Vault want is different from Idle token underlying");
 
         govTokens = _govTokens;
