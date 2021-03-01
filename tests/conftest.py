@@ -28,6 +28,7 @@ def proxyFactoryInitializable(accounts, ProxyFactoryInitializable):
         "USDC",
         "WBTC",
         "USDT",
+        "TUSD",
     ]
 )
 def token(Token, request):
@@ -37,6 +38,7 @@ def token(Token, request):
         "USDC": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
         "WBTC": "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
         "USDT": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+        "TUSD": "0x0000000000085d4780B73119b644AE5ecd22b376",
     }
     yield Token.at(tokens[request.param])
 
@@ -57,6 +59,7 @@ def idleToken(interface, token):
         "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48" : "0x5274891bEC421B39D23760c04A6755eCB444797C",
         "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599" : "0x8C81121B15197fA0eEaEE1DC75533419DcfD3151",
         "0xdAC17F958D2ee523a2206206994597C13D831ec7" : "0xF34842d05A1c888Ca02769A633DF37177415C2f8",
+        "0x0000000000085d4780B73119b644AE5ecd22b376" : "0xc278041fDD8249FE4c1Aad1193876857EEa3D68c",
     }
     yield interface.IIdleTokenV3_1(idleTokens[token.address])
 
@@ -68,6 +71,7 @@ def aprDeposit(token):
         "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48" : 5 * 1e5,
         "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599" : 250,
         "0xdAC17F958D2ee523a2206206994597C13D831ec7" : 5 * 1e5,
+        "0x0000000000085d4780B73119b644AE5ecd22b376" : 5 * 1e5,
     }
     yield aprDeposits[token.address]
 
@@ -93,6 +97,10 @@ def tokenWhale(accounts, Contract, token):
         },
         "0xdAC17F958D2ee523a2206206994597C13D831ec7" : {
             "whale" : "0x742d35Cc6634C0532925a3b844Bc454e4438f44e", # bitfinex
+            "quantity": 1 * 1e6,
+        },
+        "0x0000000000085d4780B73119b644AE5ecd22b376" : {
+            "whale" : "0xFBb1b73C4f0BDa4f67dcA266ce6Ef42f520fBB98", # bittrex
             "quantity": 1 * 1e6,
         },
     }
