@@ -54,4 +54,4 @@ def test_profit_from_lending(vault, gov, strategy, token, tokenWhale, strategist
     totalDebt = vault.strategies(strategy).dict()["totalDebt"]
     estimatedTotalAssets = strategy.estimatedTotalAssets()
 
-    assert totalDebt == estimatedTotalAssets
+    assert abs(estimatedTotalAssets - totalDebt) <= 1
