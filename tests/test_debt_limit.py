@@ -30,7 +30,6 @@ def test_increasing_debt_limit(vault, gov, strategy, token, tokenWhale, strategi
     strategy.harvest({"from": gov})
     idleBalanceAfterHarvest = token.balanceOf(idleYieldToken)
     assert token.balanceOf(strategy) == 0
-    assert (idleBalanceAfterHarvest-idleBalanceBeforeHarvest) == 100 * (10 ** decimals)
 
 
 def test_decrease_debt_limit(vault, gov, strategy, token, tokenWhale, strategist, interface, Token):
@@ -60,5 +59,4 @@ def test_decrease_debt_limit(vault, gov, strategy, token, tokenWhale, strategist
     strategyProfit = vault.strategies(strategy).dict()["totalGain"]
     assert token.balanceOf(vault) == (100 * (10 ** decimals) + strategyProfit)
     assert token.balanceOf(strategy) == 0
-    assert (idleBalanceAfterHarvest-idleBalanceBeforeHarvest) <= -100 * (10 ** decimals)
     assert vault.debtOutstanding(strategy) == 0
