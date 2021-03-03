@@ -42,6 +42,8 @@ contract StrategyIdle is BaseStrategyInitializable {
 
     address[] public govTokens;
 
+    uint256 public redeemThreshold;
+
     modifier updateVirtualPrice() {
         uint256 currentTokenPrice = _getTokenPrice();
         if (checkVirtualPrice) {
@@ -103,6 +105,8 @@ contract StrategyIdle is BaseStrategyInitializable {
         alreadyRedeemed = false;
 
         checkRedeemedAmount = true;
+
+        redeemThreshold = 1;
     }
 
     function setCheckVirtualPrice(bool _checkVirtualPrice) external onlyGovernance {
@@ -125,6 +129,10 @@ contract StrategyIdle is BaseStrategyInitializable {
 
     function setGovTokens(address[] memory _govTokens) external onlyGovernance {
         _setGovTokens(_govTokens);
+    }
+
+    function setRedeemThreshold(uint256 _redeemThreshold) external onlyGovernance {
+        redeemThreshold = _redeemThreshold;
     }
 
     // ******** OVERRIDE THESE METHODS FROM BASE CONTRACT ************
@@ -265,7 +273,7 @@ contract StrategyIdle is BaseStrategyInitializable {
             // Note: could be equal, prefer >= in case of rounding
             // We just need that is at least the amountToRedeem, not below
             require(
-                freedAmount >= _amount,
+                freedAmount.add(redeemThreshold) >= _amount,
                 'Redeemed amount must be >= amountToRedeem');
         }
 
