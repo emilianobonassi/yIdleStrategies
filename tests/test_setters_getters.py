@@ -92,3 +92,7 @@ def test_setters(vault, gov, strategy, token, tokenWhale, strategist, guardian):
 
     with brownie.reverts("!authorized"):
         strategy.setGovTokens(govTokens, {"from": strategist})
+
+    govTokens = [token.address]*(strategy.MAX_GOV_TOKENS_LENGTH() + 1)
+    with brownie.reverts("GovTokens too long"):
+        strategy.setGovTokens(govTokens, {"from": gov})
