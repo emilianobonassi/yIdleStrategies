@@ -77,6 +77,13 @@ interface VaultAPI is IERC20 {
      * is subject to governance defined by the Vault.
      */
     function governance() external view returns (address);
+
+    /**
+     * View the management address of the Vault to assert privileged functions
+     * can only be called by management. The Strategy serves the Vault, so it
+     * is subject to management defined by the Vault.
+     */
+    function management() external view returns (address);
 }
 
 /**
