@@ -41,6 +41,7 @@ contract StrategyIdle is BaseStrategyInitializable {
     bool public alreadyRedeemed;
 
     address[] public govTokens;
+    mapping(address => address[]) public paths;
 
     uint256 public redeemThreshold;
 
@@ -96,13 +97,13 @@ contract StrategyIdle is BaseStrategyInitializable {
 
         require(address(want) == IIdleTokenV3_1(_idleYieldToken).token(), "Vault want is different from Idle token underlying");
 
-        govTokens = _govTokens;
         weth = _weth;
         idleReservoir = _idleReservoir;
         idleYieldToken = _idleYieldToken;
         referral = _referral;
 
         uniswapRouterV2 = _uniswapRouterV2;
+        _setGovTokens(_govTokens);
 
         checkVirtualPrice = true;
         lastVirtualPrice = IIdleTokenV3_1(_idleYieldToken).tokenPrice();
@@ -381,26 +382,39 @@ contract StrategyIdle is BaseStrategyInitializable {
 
     function _liquidateGovTokens() internal {
         for (uint256 i = 0; i < govTokens.length; i++) {
-            IERC20 govToken = IERC20(govTokens[i]);
-            uint256 balance = govToken.balanceOf(address(this));
+            address govTokenAddress = govTokens[i];
+            uint256 balance = IERC20(govTokenAddress).balanceOf(address(this));
             if (balance > 0) {
-                govToken.safeApprove(uniswapRouterV2, 0);
-                govToken.safeApprove(uniswapRouterV2, balance);
-
-                address[] memory path = new address[](3);
-                path[0] = address(govToken);
-                path[1] = weth;
-                path[2] = address(want);
-
                 IUniswapRouter(uniswapRouterV2).swapExactTokensForTokens(
-                    balance, 1, path, address(this), now.add(1800)
+                    balance, 1, paths[govTokenAddress], address(this), now.add(1800)
                 );
             }
         }
     }
 
     function _setGovTokens(address[] memory _govTokens) internal {
+        // Disallow uniswap on old tokens
+        for (uint256 i = 0; i < govTokens.length; i++) {
+            address govTokenAddress = govTokens[i];
+            IERC20(govTokenAddress).safeTransfer(uniswapRouterV2, 0);
+            delete paths[govTokenAddress];
+        }
+
+        // Set new gov tokens
         govTokens = _govTokens;
+
+        // Allow uniswap on new tokens
+        for (uint256 i = 0; i < _govTokens.length; i++) {
+            address govTokenAddress = _govTokens[i];
+            IERC20(govTokenAddress).safeApprove(uniswapRouterV2, type(uint256).max);
+
+            address[] memory _path = new address[](3);
+            _path[0] = address(govTokenAddress);
+            _path[1] = weth;
+            _path[2] = address(want);
+
+            paths[_govTokens[i]] = _path;
+        }
     }
 
     function _getTokenPrice() view internal returns (uint256) {
