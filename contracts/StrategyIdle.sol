@@ -25,6 +25,8 @@ contract StrategyIdle is BaseStrategyInitializable {
     using Address for address;
     using SafeMath for uint256;
 
+    uint256 constant public MAX_GOV_TOKENS_LENGTH = 5;
+
     uint256 constant public FULL_ALLOC = 100000;
 
     address public uniswapRouterV2;
@@ -393,6 +395,8 @@ contract StrategyIdle is BaseStrategyInitializable {
     }
 
     function _setGovTokens(address[] memory _govTokens) internal {
+        require(_govTokens.length <= MAX_GOV_TOKENS_LENGTH , 'GovTokens too long');
+
         // Disallow uniswap on old tokens
         for (uint256 i = 0; i < govTokens.length; i++) {
             address govTokenAddress = govTokens[i];
