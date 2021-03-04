@@ -112,6 +112,8 @@ contract StrategyIdle is BaseStrategyInitializable {
         checkRedeemedAmount = true;
 
         redeemThreshold = 1;
+
+        want.safeApprove(_idleYieldToken, type(uint256).max);
     }
 
     function setCheckVirtualPrice(bool _checkVirtualPrice) external onlyGovernance {
@@ -246,11 +248,7 @@ contract StrategyIdle is BaseStrategyInitializable {
 
         uint256 balanceOfWant = balanceOfWant();
         if (balanceOfWant > _debtOutstanding) {
-            uint256 _wantAvailable = balanceOfWant.sub(_debtOutstanding);
-
-            want.safeApprove(idleYieldToken, 0);
-            want.safeApprove(idleYieldToken, _wantAvailable);
-            IIdleTokenV3_1(idleYieldToken).mintIdleToken(_wantAvailable, true, referral);
+            IIdleTokenV3_1(idleYieldToken).mintIdleToken(balanceOfWant.sub(_debtOutstanding), true, referral);
         }
     }
 
