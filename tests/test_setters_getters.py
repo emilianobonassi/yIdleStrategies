@@ -29,3 +29,66 @@ def test_double_init(strategy, strategist):
             strategist,
             strategist
         )
+
+def test_setters(vault, gov, strategy, token, tokenWhale, strategist, guardian):
+    decimals = token.decimals()
+    token.approve(vault, 2 ** 256 - 1, {"from": tokenWhale})
+    vault.setDepositLimit(2 ** 256 - 1, {"from": gov})
+    vault.addStrategy(strategy, 10_000, 0, 0, {"from": gov})
+    vault.setManagement(guardian, {"from": gov})
+
+    strategy.setCheckVirtualPrice(False, {"from": gov})
+    assert strategy.checkVirtualPrice() == False
+
+    strategy.setCheckVirtualPrice(True, {"from": gov})
+    assert strategy.checkVirtualPrice() == True
+
+    for user in [gov, guardian]:
+        for value in [True, False]:
+            strategy.setCheckRedeemedAmount(value, {"from": user})
+            assert strategy.checkRedeemedAmount() == value
+
+    strategy.enableAllChecks({"from": gov})
+    assert strategy.checkVirtualPrice() == True
+    assert strategy.checkRedeemedAmount() == True
+
+    strategy.disableAllChecks({"from": gov})
+    assert strategy.checkVirtualPrice() == False
+    assert strategy.checkRedeemedAmount() == False
+
+    strategy.setRedeemThreshold(2, {"from": guardian})
+    assert strategy.redeemThreshold() == 2
+
+    strategy.setRedeemThreshold(3, {"from": gov})
+    assert strategy.redeemThreshold() == 3
+
+    govTokens = [token.address]
+    strategy.setGovTokens(govTokens, {"from": gov})
+    assert strategy.govTokens(0) == govTokens[0]
+
+    with brownie.reverts("!authorized"):
+        strategy.setCheckVirtualPrice(False, {"from": strategist})
+
+    with brownie.reverts("!authorized"):
+        strategy.setCheckRedeemedAmount(False, {"from": strategist})
+
+    with brownie.reverts("!authorized"):
+        strategy.enableAllChecks({"from": strategist})
+
+    with brownie.reverts("!authorized"):
+        strategy.enableAllChecks({"from": guardian})
+
+    with brownie.reverts("!authorized"):
+        strategy.disableAllChecks({"from": strategist})
+
+    with brownie.reverts("!authorized"):
+        strategy.disableAllChecks({"from": guardian})
+
+    with brownie.reverts("!authorized"):
+        strategy.setRedeemThreshold(4, {"from": strategist})
+
+    with brownie.reverts("!authorized"):
+        strategy.setGovTokens(govTokens, {"from": guardian})
+
+    with brownie.reverts("!authorized"):
+        strategy.setGovTokens(govTokens, {"from": strategist})

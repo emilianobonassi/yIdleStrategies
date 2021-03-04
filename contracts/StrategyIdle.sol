@@ -53,6 +53,11 @@ contract StrategyIdle is BaseStrategyInitializable {
         _;
     }
 
+    modifier onlyGovernanceOrManagement() {
+        require(msg.sender == governance() || msg.sender == vault.management(), "!authorized");
+        _;
+    }
+
     constructor() public BaseStrategyInitializable(address(0), false) {}
 
     function init(
@@ -113,7 +118,7 @@ contract StrategyIdle is BaseStrategyInitializable {
         checkVirtualPrice = _checkVirtualPrice;
     }
 
-    function setCheckRedeemedAmount(bool _checkRedeemedAmount) external onlyGovernance {
+    function setCheckRedeemedAmount(bool _checkRedeemedAmount) external onlyGovernanceOrManagement {
         checkRedeemedAmount = _checkRedeemedAmount;
     }
 
@@ -131,7 +136,7 @@ contract StrategyIdle is BaseStrategyInitializable {
         _setGovTokens(_govTokens);
     }
 
-    function setRedeemThreshold(uint256 _redeemThreshold) external onlyGovernance {
+    function setRedeemThreshold(uint256 _redeemThreshold) external onlyGovernanceOrManagement {
         redeemThreshold = _redeemThreshold;
     }
 
