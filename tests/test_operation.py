@@ -12,7 +12,7 @@ def test_empty_vault(vault, gov, strategy, token, tokenWhale, strategist, chain)
     decimals = token.decimals()
     token.approve(vault, 2 ** 256 - 1, {"from": tokenWhale})
     vault.setDepositLimit(2 ** 256 - 1, {"from": gov})
-    vault.addStrategy(strategy, 10_000, 0, 0, {"from": gov})
+    vault.addStrategy(strategy, 10_000, 0, 2 ** 256 - 1, 0, {"from": gov})
 
     # Deposit
     initialTokenWhaleBalance = token.balanceOf(tokenWhale)
@@ -36,7 +36,7 @@ def test_profit_from_lending(vault, gov, strategy, token, tokenWhale, strategist
     decimals = token.decimals()
     token.approve(vault, 2 ** 256 - 1, {"from": tokenWhale})
     vault.setDepositLimit(2 ** 256 - 1, {"from": gov})
-    vault.addStrategy(strategy, 10_000, 0, 0, {"from": gov})
+    vault.addStrategy(strategy, 10_000, 0, 2 ** 256 - 1, 0, {"from": gov})
     vault.deposit(100 * (10 ** decimals), {"from": tokenWhale})
 
     idleYieldToken = strategy.idleYieldToken()
