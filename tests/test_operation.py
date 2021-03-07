@@ -27,6 +27,10 @@ def test_empty_vault(vault, gov, strategy, token, tokenWhale, strategist, chain)
     # Harvest and liquidate gov tokens
     strategy.harvest({"from": gov})
 
+    chain.mine(100)
+
+    strategy.harvest({"from": gov})
+
     vault.withdraw({"from": tokenWhale})
     initialFinalBalance = token.balanceOf(tokenWhale)
 
