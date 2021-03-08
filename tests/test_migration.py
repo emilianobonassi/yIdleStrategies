@@ -1,6 +1,6 @@
 from brownie import config
 
-def test_migration(gov, strategyFactory, vault, token, tokenWhale):
+def test_migration(gov, strategyFactory, vault, token, tokenWhale, strategist):
     strategyOld = strategyFactory(vault)
 
     decimals = token.decimals()
@@ -20,3 +20,9 @@ def test_migration(gov, strategyFactory, vault, token, tokenWhale):
     estimatedTotalAssetsStrategyNext = strategyNext.estimatedTotalAssets()
 
     assert estimatedTotalAssetsStrategyNext + 1 >= estimatedTotalAssetsStrategyOld
+
+    strategyNext.harvest({"from": strategist})
+
+    strategyNext.harvest({"from": strategist})
+
+    assert vault.strategies(strategyNext).dict()['totalLoss'] <= 1
