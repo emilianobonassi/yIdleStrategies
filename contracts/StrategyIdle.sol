@@ -194,7 +194,12 @@ contract StrategyIdle is BaseStrategyInitializable {
         uint256 currentValue = estimatedTotalAssets();
         uint256 wantBalance = balanceOfWant();
 
-        _profit = debt < currentValue ? currentValue.sub(debt) : 0;
+        // Calculate total profit w/o farming
+        if (debt < currentValue){
+            _profit = currentValue.sub(debt);
+        } else {
+            _loss = debt.sub(currentValue);
+        }
 
         // To withdraw = profit from lending + _debtOutstanding
         uint256 toFree = _debtOutstanding.add(_profit);
@@ -203,7 +208,18 @@ contract StrategyIdle is BaseStrategyInitializable {
         if (toFree > wantBalance) {
             // Divest only the missing part = toFree-wantBalance
             toFree = toFree.sub(wantBalance);
-            freeAmount(toFree);
+            uint256 freedAmount = freeAmount(toFree);
+
+            // loss in the case freedAmount less to be freed
+            uint256 withdrawalLoss = freedAmount < toFree ? toFree.sub(freedAmount) : 0;
+
+            // profit recalc
+            if (withdrawalLoss < _profit) {
+                _profit = _profit.sub(withdrawalLoss);
+            } else {
+                _loss = _loss.add(withdrawalLoss.sub(_profit));
+                _profit = 0;
+            }
         }
 
         // Claim only if not done in the previous liquidate step during redeem
@@ -216,20 +232,21 @@ contract StrategyIdle is BaseStrategyInitializable {
         // If we have govTokens, let's convert them!
         // This is done in a separate step since there might have been
         // a migration or an exitPosition
-        _liquidateGovTokens();
+        uint256 liquidated = _liquidateGovTokens();
+
+        // Increase profit by liquidated amount
+        _profit = _profit.add(liquidated);
 
         // Recalculate profit
-        currentValue = estimatedTotalAssets();
-        if (debt < currentValue) {
-            // Potential profit
-            wantBalance = balanceOfWant();
-            (_debtPayment, _profit) = wantBalance < _debtOutstanding ?
-                (wantBalance, 0) :
-                (_debtOutstanding, wantBalance.sub(_debtOutstanding));
+        wantBalance = want.balanceOf(address(this));
+
+        if (wantBalance < _profit) {
+            _profit = wantBalance;
+            _debtPayment = 0;
+        } else if (wantBalance < _debtPayment.add(_profit)){
+            _debtPayment = wantBalance.sub(_profit);
         } else {
-            // Loss
-            _loss = debt.sub(currentValue);
-            _profit = 0;
+            _debtPayment = _debtOutstanding;
         }
     }
 
@@ -382,14 +399,18 @@ contract StrategyIdle is BaseStrategyInitializable {
         return _getTokenPrice();
     }
 
-    function _liquidateGovTokens() internal {
+    function _liquidateGovTokens() internal returns (uint256 liquidated) {
         for (uint256 i = 0; i < govTokens.length; i++) {
             address govTokenAddress = govTokens[i];
             uint256 balance = IERC20(govTokenAddress).balanceOf(address(this));
             if (balance > 0) {
-                IUniswapRouter(uniswapRouterV2).swapExactTokensForTokens(
-                    balance, 1, paths[govTokenAddress], address(this), now.add(1800)
+                address[] memory path = paths[govTokenAddress];
+                uint[] memory amounts = IUniswapRouter(uniswapRouterV2).swapExactTokensForTokens(
+                    balance, 1, path, address(this), now.add(1800)
                 );
+
+                // leverage uniswap returns want amount
+                liquidated.add(amounts[path.length-1]);
             }
         }
     }
