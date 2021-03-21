@@ -1,57 +1,21 @@
-# Yearn Strategy Mix
+# Yearn Idle Strategies
 
-### What you'll find here
+## Registry
 
-Solidity Smart Contract template for creating your own contract in the Brownie framework.
+### Current (Prod)
 
-Interfaces for some of the most used DeFi protocols on ethereum mainnet.
+USDC v0.3.1 [Etherscan](https://etherscan.io/address/0x157fe71b86ae9200a93054c8d91b5b5d8a7a67f9) [yearn.fi](https://yearn.fi/invest/0x5f18C75AbDAe578b483E5F43f12a39cF75b973a9)
 
-Sample test suite that runs on mainnet fork.
+WBTC v0.3.1 [Etherscan](https://etherscan.io/address/0x39a382ece7534601b218bdd8adcea215cbe2440b) [yearn.fi](https://yearn.fi/invest/0xcB550A6D4C8e3517A939BC79d0c7093eb7cF56B5)
 
-### How does it work for the User
+### Current (Testing)
 
-Let's say Alice holds 100 DAI and wants to start earning yield % on them.
+USDT v0.3.2 [Etherscan](https://etherscan.io/address/0xaC05d96ba2A6252121E2a38c1F37657148d8CF80) [ape.tax](https://ape.tax/idletether)
 
-For this Alice needs to `DAI.approve(vault.address, 100)`.
+TUSD v0.3.2 [Etherscan](https://etherscan.io/address/0x7f2CcF4e38599C4b4a1FB4aC33B32a4796aCcC03) [ape.tax](https://ape.tax/trueidle)
 
-Then Alice will call `vault.deposit(100)`.
+sUSD v0.3.1 [Etherscan](https://etherscan.io/address/0xA04fE40eD8a8a8d657E41276ec9e9Ee877675e34#code) [ape.tax](https://ape.tax/susdidle)
 
-Vault will then transfer 100 DAI from Alice to itself, and mint Alice the corresponding shares.
+### Old
 
-Alice can then redeem those shares using `yVault.withdrawAll()` for the corresponding DAI balance.
-
-### How does it work for the Vault
-
-TODO
-
-### Requirements
-
-- [Install Brownie](https://eth-brownie.readthedocs.io/en/stable/install.html)
-
-- Install Dev dependencies: `pip3 install -r requirements-dev.txt`
-
-  - Use whatever pip version available
-
-- Install ganache-cli: `npm install -g ganache-cli@6.12.0`
-
-  - > For those of you using Node 14, you'll need to launch ganache-cli via node 8, 10, or 12 until this is fixed. For example, run nvm use 12 && npm install ganache-cli -g to install for node 12, and then run ganache-cli with nvm use 12 && ganache-cli.
-
-- Install npm dependencies: `npm install`
-
-- Install project dependencies:
-
-```
-$ brownie pm install iearn-finance/yearn-vaults@0.2.0
-$ brownie pm install OpenZeppelin/openzeppelin-contracts@3.1.0
-```
-
-- Copy `.env.example` to `.env`
-
-- Setup `ETHERSCAN_TOKEN` & `WEB3_INFURA_PROJECT_ID` on `.env`
-  - Get them from: [etherscan](https://etherscan.io/apis) and [infura](https://infura.io/) respectively
-
-### Useful commands
-
-- Compile contracts with: `brownie compile` (or `brownie compile --size` to see EVM bytecode sizes)
-
-- Run tests with: `brownie test`
+To be completed
