@@ -4,9 +4,9 @@
 
 ### Current (Prod)
 
-USDC v0.3.1 [Etherscan](https://etherscan.io/address/0x157fe71b86ae9200a93054c8d91b5b5d8a7a67f9) [yearn.fi](https://yearn.fi/invest/0x5f18C75AbDAe578b483E5F43f12a39cF75b973a9)
+USDC v0.3.1 [Etherscan](https://etherscan.io/address/0x79B3D0A9513C49D7Ea4BD6868a08aD966eC18f46) [yearn.fi](https://yearn.fi/invest/0x5f18C75AbDAe578b483E5F43f12a39cF75b973a9)
 
-WBTC v0.3.1 [Etherscan](https://etherscan.io/address/0x39a382ece7534601b218bdd8adcea215cbe2440b) [yearn.fi](https://yearn.fi/invest/0xcB550A6D4C8e3517A939BC79d0c7093eb7cF56B5)
+WBTC v0.3.1 [Etherscan](https://etherscan.io/address/0x3E14d864E4e82eD98849Bf666971f39Cf49Ca986) [yearn.fi](https://yearn.fi/invest/0xcB550A6D4C8e3517A939BC79d0c7093eb7cF56B5)
 
 ### Current (Testing)
 
