@@ -422,7 +422,7 @@ contract StrategyIdle is BaseStrategyInitializable {
                 );
 
                 // leverage uniswap returns want amount
-                liquidated.add(amounts[path.length-1]);
+                liquidated = liquidated.add(amounts[path.length-1]);
             }
         }
     }
