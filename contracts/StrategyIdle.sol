@@ -255,7 +255,7 @@ contract StrategyIdle is BaseStrategyInitializable {
         if (wantBalance < _profit) {
             _profit = wantBalance;
             _debtPayment = 0;
-        } else if (wantBalance < _debtPayment.add(_profit)){
+        } else if (wantBalance < _debtOutstanding.add(_profit)){
             _debtPayment = wantBalance.sub(_profit);
         } else {
             _debtPayment = _debtOutstanding;
