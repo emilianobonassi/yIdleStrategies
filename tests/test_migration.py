@@ -23,6 +23,4 @@ def test_migration(gov, strategyFactory, vault, token, tokenWhale, strategist):
 
     strategyNext.harvest({"from": strategist})
 
-    strategyNext.harvest({"from": strategist})
-
     assert vault.strategies(strategyNext).dict()['totalLoss'] <= 1
