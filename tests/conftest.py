@@ -77,7 +77,7 @@ def tokenWhale(accounts, Contract, token):
         },
         "0x57Ab1ec28D129707052df4dF418D58a2D46d5f51" : {
             "whale" : "0x49BE88F0fcC3A8393a59d3688480d7D253C37D2A", # sDAO
-            "quantity": 1 * 1e6,
+            "quantity": 100_000,
         },
         "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48" : {
             "whale" : "0xf977814e90da44bfa03b6295a0616a897441acec", # binance
@@ -160,3 +160,39 @@ def strategyFactory(strategist, keeper, strategyLogic, proxyFactoryInitializable
         strategy.setKeeper(keeper)
         return strategy
     yield factory
+
+@pytest.fixture(scope="session", autouse=True)
+def pre(request, interface, accounts, chain):
+    # test IIP7
+    print('BEFORE EVERYTHING')
+
+    proxyAdmin = interface.ProxyAdmin('0x7740792812A00510b50022D84e5c4AC390e01417')
+    newImplementation = "0x2854A270FE9c839ffE453e9178d1cFeF109d6B8E"
+
+    IdleDai = "0x3fE7940616e5Bc47b0775a0dccf6237893353bB4"
+    IdleUsdc = "0x5274891bEC421B39D23760c04A6755eCB444797C"
+    IdleUsdt = "0xF34842d05A1c888Ca02769A633DF37177415C2f8"
+    IdleWbtc = "0x8C81121B15197fA0eEaEE1DC75533419DcfD3151"
+    IdleWeth = "0xC8E6CA6E96a326dC448307A5fDE90a0b21fd7f80"
+
+    governance = interface.GovernorAlpha('0x2256b25CFC8E35c3135664FD03E77595042fe31B')
+    eta = governance.proposals(7).dict()['eta']
+    print ('Expected eta: ', eta)
+    currentTime = chain.time()
+    print ('Current Time: ', currentTime)
+
+
+    if (proxyAdmin.getProxyImplementation(IdleDai) != newImplementation):
+        print ('Time machine...')
+        chain.mine(1, eta+1)
+        currentTime = chain.time()
+        print ('Current Time: ', currentTime)
+        executor = accounts[0]
+
+        governance.execute(7, {'from': executor})
+
+    assert proxyAdmin.getProxyImplementation(IdleDai)  == newImplementation
+    assert proxyAdmin.getProxyImplementation(IdleUsdc) == newImplementation
+    assert proxyAdmin.getProxyImplementation(IdleUsdt) == newImplementation
+    assert proxyAdmin.getProxyImplementation(IdleWbtc) == newImplementation
+    assert proxyAdmin.getProxyImplementation(IdleWeth) == newImplementation
