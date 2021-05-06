@@ -17,7 +17,8 @@ import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 
 import "../interfaces/Idle/IIdleTokenV3_1.sol";
 import "../interfaces/Idle/IdleReservoir.sol";
-import "../interfaces/Uniswap/IUniswapRouter.sol";
+
+import "../interfaces/IConverter.sol";
 
 contract StrategyIdle is BaseStrategyInitializable {
     using SafeERC20 for IERC20;
@@ -28,8 +29,8 @@ contract StrategyIdle is BaseStrategyInitializable {
 
     uint256 constant public FULL_ALLOC = 100000;
 
-    address public uniswapRouterV2;
-    address public weth;
+    address internal weth;
+    address internal converter;
     address public idleReservoir;
     address public idleYieldToken;
     address public referral;
@@ -41,8 +42,7 @@ contract StrategyIdle is BaseStrategyInitializable {
 
     bool public alreadyRedeemed;
 
-    address[] public govTokens;
-    mapping(address => address[]) public paths;
+    address[] internal govTokens;
 
     uint256 public redeemThreshold;
 
@@ -67,7 +67,7 @@ contract StrategyIdle is BaseStrategyInitializable {
         address _idleReservoir,
         address _idleYieldToken,
         address _referral,
-        address _uniswapRouterV2
+        address _converter
     ) public BaseStrategyInitializable(_vault) {
         _init(
             _govTokens,
@@ -75,7 +75,7 @@ contract StrategyIdle is BaseStrategyInitializable {
             _idleReservoir,
             _idleYieldToken,
             _referral,
-            _uniswapRouterV2
+            _converter
         );
     }
 
@@ -87,7 +87,7 @@ contract StrategyIdle is BaseStrategyInitializable {
         address _idleReservoir,
         address _idleYieldToken,
         address _referral,
-        address _uniswapRouterV2
+        address _converter
     ) external {
         super._initialize(_vault, _onBehalfOf, _onBehalfOf, _onBehalfOf);
 
@@ -97,7 +97,7 @@ contract StrategyIdle is BaseStrategyInitializable {
             _idleReservoir,
             _idleYieldToken,
             _referral,
-            _uniswapRouterV2
+            _converter
         );
     }
 
@@ -107,16 +107,16 @@ contract StrategyIdle is BaseStrategyInitializable {
         address _idleReservoir,
         address _idleYieldToken,
         address _referral,
-        address _uniswapRouterV2
+        address _converter
     ) internal {
         require(address(want) == IIdleTokenV3_1(_idleYieldToken).token(), "Vault want is different from Idle token underlying");
 
-        weth = _weth;
         idleReservoir = _idleReservoir;
         idleYieldToken = _idleYieldToken;
         referral = _referral;
 
-        uniswapRouterV2 = _uniswapRouterV2;
+        weth = _weth;
+        converter = _converter;
         _setGovTokens(_govTokens);
 
         checkVirtualPrice = true;
@@ -399,12 +399,7 @@ contract StrategyIdle is BaseStrategyInitializable {
             return 0;
         }
 
-        address[] memory path = new address[](2);
-        path[0] = address(weth);
-        path[1] = address(want);
-        uint256[] memory amounts = IUniswapRouter(uniswapRouterV2).getAmountsOut(_amount, path);
-
-        return amounts[amounts.length - 1];
+        return IConverter(converter).getAmountOut(_amount, weth, address(want));
     }
 
     function getTokenPrice() view public returns (uint256) {
@@ -416,13 +411,12 @@ contract StrategyIdle is BaseStrategyInitializable {
             address govTokenAddress = govTokens[i];
             uint256 balance = IERC20(govTokenAddress).balanceOf(address(this));
             if (balance > 0) {
-                address[] memory path = paths[govTokenAddress];
-                uint[] memory amounts = IUniswapRouter(uniswapRouterV2).swapExactTokensForTokens(
-                    balance, 1, path, address(this), now.add(1800)
+                uint256 convertedAmount = IConverter(converter).convert(
+                    balance, 1, govTokenAddress, address(want), address(this)
                 );
 
                 // leverage uniswap returns want amount
-                liquidated = liquidated.add(amounts[path.length-1]);
+                liquidated = liquidated.add(convertedAmount);
             }
         }
     }
@@ -433,8 +427,7 @@ contract StrategyIdle is BaseStrategyInitializable {
         // Disallow uniswap on old tokens
         for (uint256 i = 0; i < govTokens.length; i++) {
             address govTokenAddress = govTokens[i];
-            IERC20(govTokenAddress).safeTransfer(uniswapRouterV2, 0);
-            delete paths[govTokenAddress];
+            IERC20(govTokenAddress).safeApprove(converter, 0);
         }
 
         // Set new gov tokens
@@ -443,15 +436,21 @@ contract StrategyIdle is BaseStrategyInitializable {
         // Allow uniswap on new tokens
         for (uint256 i = 0; i < _govTokens.length; i++) {
             address govTokenAddress = _govTokens[i];
-            IERC20(govTokenAddress).safeApprove(uniswapRouterV2, type(uint256).max);
-
-            address[] memory _path = new address[](3);
-            _path[0] = address(govTokenAddress);
-            _path[1] = weth;
-            _path[2] = address(want);
-
-            paths[_govTokens[i]] = _path;
+            IERC20(govTokenAddress).safeApprove(converter, type(uint256).max);
         }
+    }
+
+
+    function getConverter() external view returns (address) {
+        return converter;
+    }
+
+    function getGovTokens() external view returns (address[] memory) {
+        return govTokens;
+    }
+
+    function getWeth() external view returns (address) {
+        return weth;
     }
 
     function _getTokenPrice() view internal returns (uint256) {

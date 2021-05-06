@@ -6,8 +6,8 @@ from brownie import config
 
 def test_constructor(vault, gov, strategy, strategist, comp, idle, token):
     assert strategy.name() == "StrategyIdleidle"+ token.symbol().upper() + "Yield"
-    assert strategy.govTokens(0) == comp
-    assert strategy.govTokens(1) == idle
+    assert strategy.getGovTokens()[0] == comp
+    assert strategy.getGovTokens()[1] == idle
 
 def test_incorrect_vault(pm, guardian, gov, strategist, rewards, strategyFactory, Token):
     token = guardian.deploy(Token)
@@ -78,7 +78,7 @@ def test_setters(vault, gov, strategy, token, tokenWhale, strategist, guardian):
 
     govTokens = [token.address]
     strategy.setGovTokens(govTokens, {"from": gov})
-    assert strategy.govTokens(0) == govTokens[0]
+    assert strategy.getGovTokens()[0] == govTokens[0]
 
     with brownie.reverts("!authorized"):
         strategy.setCheckVirtualPrice(False, {"from": strategist})

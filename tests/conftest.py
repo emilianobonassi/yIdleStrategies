@@ -24,11 +24,11 @@ def proxyFactoryInitializable(accounts, ProxyFactoryInitializable):
 @pytest.fixture(
     params=[
         "DAI",
-        "SUSD",
-        "USDC",
-        "WBTC",
-        "USDT",
-        "TUSD",
+        #"SUSD",
+        #"USDC",
+        #"WBTC",
+        #"USDT",
+        #"TUSD",
     ]
 )
 def token(Token, request):
@@ -50,6 +50,13 @@ def comp(Token):
 def idle(Token):
     yield Token.at("0x875773784Af8135eA0ef43b5a374AaD105c5D39e")
 
+@pytest.fixture
+def uniswap(Contract):
+    yield Contract("0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D")
+
+@pytest.fixture
+def weth(Contract):
+    yield Contract("0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2")
 
 @pytest.fixture
 def idleToken(interface, token):
@@ -132,22 +139,28 @@ def keeper(accounts):
     # This is our trusty bot!
     yield accounts[4]
 
+@pytest.fixture
+def converter(strategist, Converter, uniswap, weth):
+    yield Converter.deploy(
+        uniswap,
+        weth,
+        {"from": strategist}
+    )
+
 @pytest.fixture()
 def strategy(vault, strategyFactory):
     yield strategyFactory(vault)
 
 @pytest.fixture()
-def strategyFactory(strategist, keeper, proxyFactoryInitializable, idleToken, comp, idle, StrategyIdle):
+def strategyFactory(strategist, keeper, proxyFactoryInitializable, idleToken, comp, idle, weth, converter, StrategyIdle):
     def factory(vault, proxy=True):
         onBehalfOf = strategist
         govTokens = [
             comp,
             idle,
         ]
-        weth = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
         idleReservoir = "0x031f71B5369c251a6544c41CE059e6b3d61e42C6"
         referral = "0x652c1c23780d1A015938dD58b4a65a5F9eFBA653"
-        uniswapRouterV2 = "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D"
 
         strategyLogic = StrategyIdle.deploy(
             vault,
@@ -156,7 +169,7 @@ def strategyFactory(strategist, keeper, proxyFactoryInitializable, idleToken, co
             idleReservoir,
             idleToken,
             referral,
-            uniswapRouterV2,
+            converter,
             {"from": strategist}
         )
 
@@ -171,7 +184,7 @@ def strategyFactory(strategist, keeper, proxyFactoryInitializable, idleToken, co
                 idleReservoir,
                 idleToken,
                 referral,
-                uniswapRouterV2
+                converter
             )
             tx = proxyFactoryInitializable.deployMinimal(
                 strategyLogic,
