@@ -445,6 +445,18 @@ contract StrategyIdle is BaseStrategyInitializable {
         return converter;
     }
 
+    function setConverter(address _converter) external onlyGovernanceOrManagement {
+        // Disallow old converter and allow new ones
+        for (uint256 i = 0; i < govTokens.length; i++) {
+            address govTokenAddress = govTokens[i];
+            IERC20(govTokenAddress).safeApprove(converter, 0);
+            IERC20(govTokenAddress).safeApprove(_converter, type(uint256).max);
+        }
+
+        // Set new converter
+        converter = _converter;
+    }
+
     function getGovTokens() external view returns (address[] memory) {
         return govTokens;
     }
