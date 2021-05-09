@@ -59,6 +59,10 @@ def weth(Contract):
     yield Contract("0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2")
 
 @pytest.fixture
+def bpool(Contract):
+    yield Contract("0xCaf467DFE064a1F54e4ece8515Ddf326B9bE801E")
+
+@pytest.fixture
 def idleToken(interface, token):
     idleTokens = {
         "0x6B175474E89094C44Da98b954EedeAC495271d0F" : "0x3fE7940616e5Bc47b0775a0dccf6237893353bB4",
@@ -140,10 +144,13 @@ def keeper(accounts):
     yield accounts[4]
 
 @pytest.fixture
-def converter(strategist, Converter, uniswap, weth):
+def converter(strategist, Converter, uniswap, weth, bpool, idle):
     yield Converter.deploy(
         uniswap,
         weth,
+        bpool,
+        idle,
+        "0.01 ether",
         {"from": strategist}
     )
 

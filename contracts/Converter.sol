@@ -18,6 +18,8 @@ import "../interfaces/Uniswap/IUniswapRouter.sol";
 
 import "../interfaces/IConverter.sol";
 
+import "../interfaces/Balancer/IBPool.sol";
+
 contract Converter is IConverter, Ownable {
     using SafeERC20 for IERC20;
     using Address for address;
@@ -25,17 +27,34 @@ contract Converter is IConverter, Ownable {
 
     address internal uniswap;
     address immutable weth;
+    address internal bpool;
+    address internal idle;
+    uint256 internal minAmountIn;
 
     constructor(
         address _uniswap,
-        address _weth
+        address _weth,
+        address _bpool,
+        address _idle,
+        uint256 _minAmountIn
     ) public {
         uniswap = _uniswap;
         weth = _weth;
+        bpool = _bpool;
+        idle = _idle;
+        minAmountIn = _minAmountIn;
     }
 
     function getUniswap() external view returns (address) {
         return uniswap;
+    }
+
+    function getBPool() external view returns (address) {
+        return bpool;
+    }
+
+    function getMinMountIn() external view returns (uint256) {
+        return minAmountIn;
     }
 
     function convert(
@@ -47,7 +66,35 @@ contract Converter is IConverter, Ownable {
     ) external override returns (uint convertedAmount) {
         IERC20(assetIn).safeTransferFrom(msg.sender, address(this), amountIn);
 
+        // Balancer has a minAmount to swap otherwise revert with ERR_MATH_APPROX
+        if (assetIn == idle && amountIn >= minAmountIn) {
+            if (IERC20(assetIn).allowance(address(this), bpool) < amountIn) {
+                IERC20(assetIn).safeApprove(bpool, 0);
+                IERC20(assetIn).safeApprove(bpool, type(uint256).max);
+            }
+
+            // Convert always IDLE to WETH
+            (convertedAmount, ) = IBPool(bpool).swapExactAmountIn(
+                assetIn,
+                amountIn,
+                weth,
+                amountOutMin,
+                type(uint256).max
+            );
+
+            // Return immediately in the case assetOut WETH
+            // Otw swap with the default method
+            if (assetOut == weth) {
+                return convertedAmount;
+            }
+
+            // assetIn becomes weth and amountIn the returned WETH
+            assetIn = weth;
+            amountIn = convertedAmount;
+        }
+
         if (IERC20(assetIn).allowance(address(this), uniswap) < amountIn) {
+            IERC20(assetIn).safeApprove(uniswap, 0);
             IERC20(assetIn).safeApprove(uniswap, type(uint256).max);
         }
 
