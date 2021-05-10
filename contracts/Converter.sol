@@ -85,6 +85,7 @@ contract Converter is IConverter, Ownable {
             // Return immediately in the case assetOut WETH
             // Otw swap with the default method
             if (assetOut == weth) {
+                IERC20(weth).safeTransfer(to, convertedAmount);
                 return convertedAmount;
             }
 
@@ -99,7 +100,7 @@ contract Converter is IConverter, Ownable {
         }
 
         uint[] memory amounts = IUniswapRouter(uniswap).swapExactTokensForTokens(
-            amountIn, amountOutMin, _getPath(assetIn, assetOut), msg.sender, now.add(1800)
+            amountIn, amountOutMin, _getPath(assetIn, assetOut), to, now.add(1800)
         );
 
         convertedAmount = amounts[amounts.length.sub(1)];
