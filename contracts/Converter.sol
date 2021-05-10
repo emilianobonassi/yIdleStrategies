@@ -53,7 +53,7 @@ contract Converter is IConverter, Ownable {
         return bpool;
     }
 
-    function getMinMountIn() external view returns (uint256) {
+    function getMinAmountIn() external view returns (uint256) {
         return minAmountIn;
     }
 
@@ -133,5 +133,17 @@ contract Converter is IConverter, Ownable {
 
     function sweep(address _token) external onlyOwner {
         IERC20(_token).safeTransfer(owner(), IERC20(_token).balanceOf(address(this)));
+    }
+
+    function setUniswap(address _uniswap) external onlyOwner {
+        uniswap = _uniswap;
+    }
+
+    function setBPool(address _bpool) external onlyOwner {
+        bpool = _bpool;
+    }
+
+    function setMinAmountIn(uint256 _minAmountIn) external onlyOwner {
+        minAmountIn = _minAmountIn;
     }
 }
