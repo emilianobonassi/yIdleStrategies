@@ -77,3 +77,40 @@ def test_converter_balancer_token(Contract, converter, accounts, idle, weth):
     assert weth.balanceOf(converter) == 0
     assert idle.balanceOf(converter) == 0
     assert dai.balanceOf(converter) == 0
+
+def test_converter_setters(Contract, converter, accounts, idle):
+    owner = accounts.at(converter.owner(), True)
+
+    converter.setUniswap(idle, {'from': owner})
+    assert converter.getUniswap() == idle.address
+
+    with brownie.reverts("Ownable: caller is not the owner"):
+        converter.setUniswap(idle, {'from': accounts[0]})
+
+    converter.setBPool(idle, {'from': owner})
+    assert converter.getBPool() == idle.address
+
+    with brownie.reverts("Ownable: caller is not the owner"):
+        converter.setBPool(idle, {'from': accounts[0]})
+
+    minAmountIn = 12345
+    converter.setMinAmountIn(minAmountIn, {'from': owner})
+    assert converter.getMinAmountIn() == minAmountIn
+
+    with brownie.reverts("Ownable: caller is not the owner"):
+        converter.setMinAmountIn(minAmountIn, {'from': accounts[0]})
+
+def test_sweep(Contract, converter, accounts, idle):
+    owner = accounts.at(converter.owner(), True)
+    user = accounts[0]
+    idleWhale = accounts.at('0x107A369bc066c77FF061c7d2420618a6ce31B925', True)
+
+    amount = '100 ether'
+    idle.transfer(converter, amount, {'from': idleWhale})
+
+    preBalance = idle.balanceOf(owner)
+    converter.sweep(idle, {'from': owner})
+    assert (idle.balanceOf(owner)-preBalance) == 100 * (10 ** 18)
+
+    with brownie.reverts("Ownable: caller is not the owner"):
+        converter.sweep(idle, {'from': user})
