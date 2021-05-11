@@ -80,6 +80,9 @@ def test_setters(vault, gov, strategy, token, tokenWhale, strategist, guardian):
     strategy.setGovTokens(govTokens, {"from": gov})
     assert strategy.getGovTokens()[0] == govTokens[0]
 
+    strategy.setConverter(token, {"from": guardian})
+    assert strategy.getConverter() == token
+
     with brownie.reverts("!authorized"):
         strategy.setCheckVirtualPrice(False, {"from": strategist})
 
@@ -106,6 +109,9 @@ def test_setters(vault, gov, strategy, token, tokenWhale, strategist, guardian):
 
     with brownie.reverts("!authorized"):
         strategy.setGovTokens(govTokens, {"from": strategist})
+
+    with brownie.reverts("!authorized"):
+        strategy.setConverter(token, {"from": strategist})
 
     govTokens = [token.address]*(strategy.MAX_GOV_TOKENS_LENGTH() + 1)
     with brownie.reverts("GovTokens too long"):
