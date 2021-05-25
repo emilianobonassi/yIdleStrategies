@@ -26,7 +26,7 @@ contract Converter is IConverter, Ownable {
     using SafeMath for uint256;
 
     address internal uniswap;
-    address immutable weth;
+    address immutable public weth;
     address internal bpool;
     address internal idle;
     uint256 internal minAmountIn;
