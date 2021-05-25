@@ -68,10 +68,7 @@ contract Converter is IConverter, Ownable {
 
         // Balancer has a minAmount to swap otherwise revert with ERR_MATH_APPROX
         if (assetIn == idle && amountIn >= minAmountIn) {
-            if (IERC20(assetIn).allowance(address(this), bpool) < amountIn) {
-                IERC20(assetIn).safeApprove(bpool, 0);
-                IERC20(assetIn).safeApprove(bpool, type(uint256).max);
-            }
+            _ensureAllowance(assetIn, bpool, amountIn);
 
             // Convert always IDLE to WETH
             (convertedAmount, ) = IBPool(bpool).swapExactAmountIn(
@@ -94,16 +91,20 @@ contract Converter is IConverter, Ownable {
             amountIn = convertedAmount;
         }
 
-        if (IERC20(assetIn).allowance(address(this), uniswap) < amountIn) {
-            IERC20(assetIn).safeApprove(uniswap, 0);
-            IERC20(assetIn).safeApprove(uniswap, type(uint256).max);
-        }
+        _ensureAllowance(assetIn, uniswap, amountIn);
 
         uint[] memory amounts = IUniswapRouter(uniswap).swapExactTokensForTokens(
             amountIn, amountOutMin, _getPath(assetIn, assetOut), to, now.add(1800)
         );
 
         convertedAmount = amounts[amounts.length.sub(1)];
+    }
+
+    function _ensureAllowance(address token, address spender, uint256 amount) internal {
+        if (IERC20(token).allowance(address(this), spender) < amount) {
+            IERC20(token).safeApprove(spender, 0);
+            IERC20(token).safeApprove(spender, type(uint256).max);
+        }
     }
 
     function _getPath(address assetIn, address assetOut) internal view returns (address[] memory path) {
