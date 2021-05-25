@@ -44,7 +44,7 @@ def test_double_init_no_proxy(strategyFactory, vault, strategist):
             strategist
         )
 
-def test_setters(vault, gov, strategy, token, tokenWhale, strategist, guardian):
+def test_setters(vault, gov, strategy, token, tokenWhale, strategist, converter, guardian):
     decimals = token.decimals()
     token.approve(vault, 2 ** 256 - 1, {"from": tokenWhale})
     vault.setDepositLimit(2 ** 256 - 1, {"from": gov})
@@ -80,8 +80,8 @@ def test_setters(vault, gov, strategy, token, tokenWhale, strategist, guardian):
     strategy.setGovTokens(govTokens, {"from": gov})
     assert strategy.getGovTokens()[0] == govTokens[0]
 
-    strategy.setConverter(token, {"from": guardian})
-    assert strategy.getConverter() == token
+    strategy.setConverter(converter, {"from": guardian})
+    assert strategy.getConverter() == converter
 
     with brownie.reverts("!authorized"):
         strategy.setCheckVirtualPrice(False, {"from": strategist})
