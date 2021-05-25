@@ -249,7 +249,7 @@ contract StrategyIdle is BaseStrategyInitializable {
         _profit = _profit.add(liquidated);
 
         // Recalculate profit
-        wantBalance = want.balanceOf(address(this));
+        wantBalance = balanceOfWant();
 
         if (wantBalance < _profit) {
             _profit = wantBalance;
