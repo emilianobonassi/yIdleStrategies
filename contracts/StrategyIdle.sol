@@ -164,9 +164,8 @@ contract StrategyIdle is BaseStrategyInitializable {
     }
 
     function estimatedTotalAssets() public override view returns (uint256) {
-        // TODO: Build a more accurate estimate using the value of all positions in terms of `want`
         return want.balanceOf(address(this))
-                   .add(balanceOnIdle()) //TODO: estimate gov tokens value
+                   .add(balanceOnIdle())
         ;
     }
 
@@ -270,7 +269,6 @@ contract StrategyIdle is BaseStrategyInitializable {
      * be 0, and you should handle that scenario accordingly.
      */
     function adjustPosition(uint256 _debtOutstanding) internal override updateVirtualPrice {
-        // TODO: Do something to invest excess `want` tokens (from the Vault) into your positions
         // NOTE: Try to adjust positions so that `_debtOutstanding` can be freed up on *next* harvest (not immediately)
 
         //emergency exit is dealt with in prepareReturn
@@ -326,8 +324,6 @@ contract StrategyIdle is BaseStrategyInitializable {
         updateVirtualPrice
         returns (uint256 _liquidatedAmount, uint256 _loss)
     {
-        // TODO: Do stuff here to free up to `_amountNeeded` from all positions back into `want`
-
         if (balanceOfWant() < _amountNeeded) {
             // Note: potential drift by 1 wei, reduce to max balance in the case approx is rounded up
             uint256 amountToRedeem = _amountNeeded.sub(balanceOfWant());
@@ -352,7 +348,6 @@ contract StrategyIdle is BaseStrategyInitializable {
     }
 
     function prepareMigration(address _newStrategy) internal override {
-        // TODO: Transfer any non-`want` tokens to the new strategy
         // NOTE: `migrate` will automatically forward all `want` in this strategy to the new one
 
         // this automatically claims the gov tokens in addition to want
