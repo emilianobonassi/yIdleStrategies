@@ -324,20 +324,21 @@ contract StrategyIdle is BaseStrategyInitializable {
         updateVirtualPrice
         returns (uint256 _liquidatedAmount, uint256 _loss)
     {
-        if (balanceOfWant() < _amountNeeded) {
+        uint256 wantBalance = balanceOfWant();
+
+        if (wantBalance < _amountNeeded) {
             // Note: potential drift by 1 wei, reduce to max balance in the case approx is rounded up
-            uint256 amountToRedeem = _amountNeeded.sub(balanceOfWant());
+            uint256 amountToRedeem = _amountNeeded.sub(wantBalance);
             freeAmount(amountToRedeem);
+            wantBalance = balanceOfWant();
         }
 
         // _liquidatedAmount min(_amountNeeded, balanceOfWant), otw vault accounting breaks
-        uint256 balanceOfWant = balanceOfWant();
-
-        if (balanceOfWant >= _amountNeeded) {
+        if (wantBalance >= _amountNeeded) {
             _liquidatedAmount = _amountNeeded;
         } else {
-            _liquidatedAmount = balanceOfWant;
-            _loss = _amountNeeded.sub(balanceOfWant);
+            _liquidatedAmount = wantBalance;
+            _loss = _amountNeeded.sub(wantBalance);
         }
     }
 
