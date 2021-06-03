@@ -91,7 +91,7 @@ def aprDeposit(token):
 def tokenWhale(accounts, Contract, token):
     tokenWhalesAndQuantities = {
         "0x6B175474E89094C44Da98b954EedeAC495271d0F" : {
-            "whale" : "0x3f5CE5FBFe3E9af3971dD833D26bA9b5C936f0bE", # binance
+            "whale" : "0x40ec5b33f54e0e8a33a975908c5ba1c14e5bbbdf", # matic
             "quantity": 1 * 1e6,
         },
         "0x57Ab1ec28D129707052df4dF418D58a2D46d5f51" : {
