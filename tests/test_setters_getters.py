@@ -80,7 +80,7 @@ def test_setters(vault, gov, strategy, token, tokenWhale, strategist, converter,
     strategy.setGovTokens(govTokens, {"from": gov})
     assert strategy.getGovTokens()[0] == govTokens[0]
 
-    strategy.setConverter(converter, {"from": guardian})
+    strategy.setConverter(converter, {"from": gov})
     assert strategy.getConverter() == converter
 
     with brownie.reverts("!authorized"):
