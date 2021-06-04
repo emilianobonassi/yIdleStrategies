@@ -3,7 +3,7 @@ import brownie
 from brownie import Wei
 
 
-def test_over_redeem(vault, gov, strategy, token, tokenWhale, strategist):
+def test_over_redeem(vault, gov, strategy, token, tokenWhale, strategist, chain):
     decimals = token.decimals()
     token.approve(vault, 2 ** 256 - 1, {"from": tokenWhale})
     vault.setDepositLimit(100 * (10 ** decimals), {"from": gov})
@@ -11,6 +11,8 @@ def test_over_redeem(vault, gov, strategy, token, tokenWhale, strategist):
     vault.deposit(100 * (10 ** decimals), {"from": tokenWhale})
 
     idleYieldToken = strategy.idleYieldToken()
+
+    chain.sleep(10)
 
     # Everything should be invested
     idleBalanceBeforeHarvest = token.balanceOf(idleYieldToken)

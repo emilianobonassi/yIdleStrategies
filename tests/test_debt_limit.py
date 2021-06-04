@@ -42,6 +42,7 @@ def test_decrease_debt_limit(vault, gov, strategy, token, tokenWhale, strategist
 
     idleYieldToken = strategy.idleYieldToken()
 
+    chain.sleep(10)
     # Everything should be invested
     idleBalanceBeforeHarvest = token.balanceOf(idleYieldToken)
     strategy.harvest({"from": gov})
