@@ -361,6 +361,18 @@ contract StrategyIdle is BaseStrategyInitializable {
         }
     }
 
+    /**
+     * Liquidate everything and returns the amount that got freed.
+     * This function is used during emergency exit instead of `prepareReturn()` to
+     * liquidate all of the Strategy's positions back to the Vault.
+     */
+
+    function liquidateAllPositions() internal override returns (uint256 _amountFreed) {
+        IIdleTokenV3_1(idleYieldToken).redeemIdleToken(IERC20(idleYieldToken).balanceOf(address(this)));
+
+        _amountFreed = balanceOfWant();
+    }
+
     function protectedTokens()
         internal
         override
@@ -390,7 +402,7 @@ contract StrategyIdle is BaseStrategyInitializable {
         return IERC20(want).balanceOf(address(this));
     }
 
-    function ethToWant(uint256 _amount) public view returns (uint256) {
+    function ethToWant(uint256 _amount) public override view returns (uint256) {
         if (_amount == 0) {
             return 0;
         }
