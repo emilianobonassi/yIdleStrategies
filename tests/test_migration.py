@@ -1,6 +1,6 @@
 from brownie import config
 
-def test_migration(gov, strategyFactory, vault, token, tokenWhale, strategist):
+def test_migration(gov, strategyFactory, vault, token, tokenWhale, strategist, chain):
     strategyOld = strategyFactory(vault)
 
     decimals = token.decimals()
@@ -8,6 +8,8 @@ def test_migration(gov, strategyFactory, vault, token, tokenWhale, strategist):
     vault.setDepositLimit(2 ** 256 - 1, {"from": gov})
     vault.addStrategy(strategyOld, 10_000, 0, 2 ** 256 - 1, 0, {"from": gov})
     vault.deposit(100 * (10 ** decimals), {"from": tokenWhale})
+
+    chain.sleep(10)
 
     strategyOld.harvest({"from": gov})
 

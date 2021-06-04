@@ -19,6 +19,8 @@ def test_empty_vault(vault, gov, strategy, token, tokenWhale, strategist, chain)
     depositAmount = 100 * (10 ** decimals)
     vault.deposit(depositAmount, {"from": tokenWhale})
 
+    chain.sleep(10)
+
     # Everything should be invested
     strategy.harvest({"from": gov})
 
@@ -42,6 +44,8 @@ def test_profit_from_lending(vault, gov, strategy, token, tokenWhale, strategist
     vault.setDepositLimit(2 ** 256 - 1, {"from": gov})
     vault.addStrategy(strategy, 10_000, 0, 2 ** 256 - 1, 0, {"from": gov})
     vault.deposit(100 * (10 ** decimals), {"from": tokenWhale})
+
+    chain.sleep(10)
 
     idleYieldToken = strategy.idleYieldToken()
 

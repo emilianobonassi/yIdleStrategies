@@ -3,7 +3,7 @@ import brownie
 from brownie import Wei
 
 
-def test_increasing_debt_limit(vault, gov, strategy, token, tokenWhale, strategist):
+def test_increasing_debt_limit(vault, gov, strategy, token, tokenWhale, strategist, chain):
     decimals = token.decimals()
     token.approve(vault, 2 ** 256 - 1, {"from": tokenWhale})
     vault.setDepositLimit(100 * (10 ** decimals), {"from": gov})
@@ -14,6 +14,7 @@ def test_increasing_debt_limit(vault, gov, strategy, token, tokenWhale, strategi
 
     # Everything should be invested
     idleBalanceBeforeHarvest = token.balanceOf(idleYieldToken)
+    chain.sleep(10)
     strategy.harvest({"from": gov})
     idleBalanceAfterHarvest = token.balanceOf(idleYieldToken)
     assert token.balanceOf(strategy) == 0
