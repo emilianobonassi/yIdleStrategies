@@ -154,12 +154,16 @@ def converter(strategist, Converter, uniswap, weth, bpool, idle):
         {"from": strategist}
     )
 
+@pytest.fixture
+def healthCheck(Contract):
+    yield Contract('0xDDCea799fF1699e98EDF118e0629A974Df7DF012')
+
 @pytest.fixture()
 def strategy(vault, strategyFactory):
     yield strategyFactory(vault)
 
 @pytest.fixture()
-def strategyFactory(strategist, keeper, proxyFactoryInitializable, idleToken, comp, idle, weth, converter, StrategyIdle):
+def strategyFactory(strategist, keeper, proxyFactoryInitializable, idleToken, comp, idle, weth, converter, StrategyIdle, healthCheck, gov):
     def factory(vault, proxy=True):
         onBehalfOf = strategist
         govTokens = [
@@ -202,5 +206,7 @@ def strategyFactory(strategist, keeper, proxyFactoryInitializable, idleToken, co
 
         strategy = StrategyIdle.at(strategyAddress, owner=strategist)
         strategy.setKeeper(keeper)
+        strategy.setHealthCheck(healthCheck, {"from": gov})
+        strategy.setDoHealthCheck(True, {"from": gov})
         return strategy
     yield factory
