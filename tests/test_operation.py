@@ -36,7 +36,7 @@ def test_empty_vault(vault, gov, strategy, token, tokenWhale, strategist, chain)
     vault.withdraw({"from": tokenWhale})
     initialFinalBalance = token.balanceOf(tokenWhale)
 
-    assert initialFinalBalance-initialTokenWhaleBalance > 0
+    assert initialFinalBalance-initialTokenWhaleBalance >= 0
 
 def test_profit_from_lending(vault, gov, strategy, token, tokenWhale, strategist, chain):
     decimals = token.decimals()

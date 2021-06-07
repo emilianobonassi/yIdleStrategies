@@ -33,7 +33,7 @@ def test_increasing_debt_limit(vault, gov, strategy, token, tokenWhale, strategi
     assert token.balanceOf(strategy) == 0
 
 
-def test_decrease_debt_limit(vault, gov, strategy, token, tokenWhale, strategist, interface, Token):
+def test_decrease_debt_limit(vault, gov, strategy, token, tokenWhale, strategist, interface, Token, chain):
     decimals = token.decimals()
     token.approve(vault, 2 ** 256 - 1, {"from": tokenWhale})
     vault.setDepositLimit(200 * (10 ** decimals), {"from": gov})
