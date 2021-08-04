@@ -70,4 +70,4 @@ jobs:
       run: pip install -r requirements-dev.txt
 
     - name: Run Tests
-      run: brownie test tests/ -s --revert-tb
+      run: brownie test tests/ -s --revert-tb --coverage
