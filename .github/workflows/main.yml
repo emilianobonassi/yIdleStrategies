@@ -5,6 +5,7 @@ on:
     branches:
     - master
     - dev
+    - test-coverage
   pull_request:
     branches:
     - master
