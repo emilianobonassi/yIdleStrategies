@@ -24,11 +24,7 @@ def proxyFactoryInitializable(accounts, ProxyFactoryInitializable):
 @pytest.fixture(
     params=[
         "DAI",
-        "SUSD",
-        "USDC",
-        "WBTC",
         "USDT",
-        "TUSD",
     ]
 )
 def token(Token, request):
