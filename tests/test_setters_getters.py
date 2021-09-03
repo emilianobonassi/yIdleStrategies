@@ -6,8 +6,8 @@ from brownie import config
 
 def test_constructor(vault, gov, strategy, strategist, comp, idle, token):
     assert strategy.name() == "StrategyIdleidle"+ token.symbol().upper() + "Yield"
-    assert strategy.govTokens(0) == comp
-    assert strategy.govTokens(1) == idle
+    assert strategy.getGovTokens()[0] == comp
+    assert strategy.getGovTokens()[1] == idle
 
 def test_incorrect_vault(pm, guardian, gov, strategist, rewards, strategyFactory, Token):
     token = guardian.deploy(Token)
@@ -30,7 +30,7 @@ def test_double_init(strategy, strategist):
             strategist
         )
 
-def test_setters(vault, gov, strategy, token, tokenWhale, strategist, guardian):
+def test_setters(vault, gov, strategy, token, tokenWhale, strategist, converter, guardian):
     decimals = token.decimals()
     token.approve(vault, 2 ** 256 - 1, {"from": tokenWhale})
     vault.setDepositLimit(2 ** 256 - 1, {"from": gov})
@@ -64,7 +64,10 @@ def test_setters(vault, gov, strategy, token, tokenWhale, strategist, guardian):
 
     govTokens = [token.address]
     strategy.setGovTokens(govTokens, {"from": gov})
-    assert strategy.govTokens(0) == govTokens[0]
+    assert strategy.getGovTokens()[0] == govTokens[0]
+
+    strategy.setConverter(converter, {"from": gov})
+    assert strategy.getConverter() == converter
 
     with brownie.reverts("!authorized"):
         strategy.setCheckVirtualPrice(False, {"from": strategist})
@@ -92,6 +95,9 @@ def test_setters(vault, gov, strategy, token, tokenWhale, strategist, guardian):
 
     with brownie.reverts("!authorized"):
         strategy.setGovTokens(govTokens, {"from": strategist})
+    
+    with brownie.reverts("!authorized"):
+        strategy.setConverter(token, {"from": strategist})
 
     govTokens = [token.address]*(strategy.MAX_GOV_TOKENS_LENGTH() + 1)
     with brownie.reverts("GovTokens too long"):

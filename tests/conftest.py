@@ -24,17 +24,13 @@ def proxyFactoryInitializable(accounts, ProxyFactoryInitializable):
 @pytest.fixture(
     params=[
         "DAI",
-        "SUSD",
         "USDC",
-        "WBTC",
     ]
 )
 def token(Token, request):
     tokens = {
         "DAI":  "0x6B175474E89094C44Da98b954EedeAC495271d0F",
-        "SUSD": "0x57Ab1ec28D129707052df4dF418D58a2D46d5f51",
         "USDC": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
-        "WBTC": "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
     }
     yield Token.at(tokens[request.param])
 
@@ -46,47 +42,37 @@ def comp(Token):
 def idle(Token):
     yield Token.at("0x875773784Af8135eA0ef43b5a374AaD105c5D39e")
 
+@pytest.fixture
+def uniswap(Contract):
+    yield Contract("0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D")
+
+@pytest.fixture
+def weth(Contract):
+    yield Contract("0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2")
+
+@pytest.fixture
+def bpool(Contract):
+    yield Contract("0xCaf467DFE064a1F54e4ece8515Ddf326B9bE801E")
 
 @pytest.fixture
 def idleToken(interface, token):
     idleTokens = {
         "0x6B175474E89094C44Da98b954EedeAC495271d0F" : "0x3fE7940616e5Bc47b0775a0dccf6237893353bB4",
-        "0x57Ab1ec28D129707052df4dF418D58a2D46d5f51" : "0xF52CDcD458bf455aeD77751743180eC4A595Fd3F",
         "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48" : "0x5274891bEC421B39D23760c04A6755eCB444797C",
-        "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599" : "0x8C81121B15197fA0eEaEE1DC75533419DcfD3151",
     }
     yield interface.IIdleTokenV3_1(idleTokens[token.address])
-
-@pytest.fixture
-def aprDeposit(token):
-    aprDeposits = {
-        "0x6B175474E89094C44Da98b954EedeAC495271d0F" : 5 * 1e5,
-        "0x57Ab1ec28D129707052df4dF418D58a2D46d5f51" : 5 * 1e5,
-        "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48" : 5 * 1e5,
-        "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599" : 250,
-    }
-    yield aprDeposits[token.address]
-
 
 @pytest.fixture
 def tokenWhale(accounts, Contract, token):
     tokenWhalesAndQuantities = {
         "0x6B175474E89094C44Da98b954EedeAC495271d0F" : {
-            "whale" : "0x3f5CE5FBFe3E9af3971dD833D26bA9b5C936f0bE", # binance
-            "quantity": 1 * 1e6,
-        },
-        "0x57Ab1ec28D129707052df4dF418D58a2D46d5f51" : {
-            "whale" : "0x49BE88F0fcC3A8393a59d3688480d7D253C37D2A", # sDAO
+            "whale" : "0x40ec5b33f54e0e8a33a975908c5ba1c14e5bbbdf", # matic
             "quantity": 1 * 1e6,
         },
         "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48" : {
             "whale" : "0xf977814e90da44bfa03b6295a0616a897441acec", # binance
             "quantity": 1 * 1e6,
         },
-        "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599" : {
-            "whale" : "0xBF72Da2Bd84c5170618Fbe5914B0ECA9638d5eb5", # maker
-            "quantity": 1 * 1000,
-        }
     }
 
     user = accounts[5]
@@ -117,6 +103,16 @@ def keeper(accounts):
     # This is our trusty bot!
     yield accounts[4]
 
+@pytest.fixture
+def converter(strategist, Converter, uniswap, weth, bpool, idle):
+    yield Converter.deploy(
+        uniswap,
+        weth,
+        bpool,
+        idle,
+        "0.01 ether",
+        {"from": strategist}
+    )
 
 @pytest.fixture()
 def strategyLogic(strategist, StrategyIdle):
@@ -127,7 +123,7 @@ def strategy(vault, strategyFactory):
     yield strategyFactory(vault)
 
 @pytest.fixture()
-def strategyFactory(strategist, keeper, strategyLogic, proxyFactoryInitializable, idleToken, comp, idle, StrategyIdle):
+def strategyFactory(strategist, keeper, strategyLogic, proxyFactoryInitializable, idleToken, comp, idle, converter, StrategyIdle):
     def factory(vault):
         onBehalfOf = strategist
         govTokens = [
@@ -137,7 +133,6 @@ def strategyFactory(strategist, keeper, strategyLogic, proxyFactoryInitializable
         weth = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
         idleReservoir = "0x031f71B5369c251a6544c41CE059e6b3d61e42C6"
         referral = "0x652c1c23780d1A015938dD58b4a65a5F9eFBA653"
-        uniswapRouterV2 = "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D"
 
         data = strategyLogic.init.encode_input(
             vault,
@@ -147,7 +142,7 @@ def strategyFactory(strategist, keeper, strategyLogic, proxyFactoryInitializable
             idleReservoir,
             idleToken,
             referral,
-            uniswapRouterV2
+            converter
         )
 
         tx = proxyFactoryInitializable.deployMinimal(
