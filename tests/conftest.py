@@ -106,6 +106,14 @@ def converter(strategist, Converter, uniswap, weth, bpool, idle):
         {"from": strategist}
     )
 
+@pytest.fixture
+def simpleConverter(strategist, SimpleConverter, uniswap, weth):
+    yield SimpleConverter.deploy(
+        uniswap,
+        weth,
+        {"from": strategist}
+    )
+
 @pytest.fixture()
 def strategy(vault, strategyFactory):
     yield strategyFactory(vault)
