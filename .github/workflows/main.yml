@@ -5,10 +5,12 @@ on:
     branches:
     - master
     - dev
+    - release-usdt-0.3.5
   pull_request:
     branches:
     - master
     - dev
+    - release-usdt-0.3.5
 
 env:
   ETHERSCAN_TOKEN:  ${{ secrets.ETHERSCAN_TOKEN }}
